@@ -204,6 +204,61 @@ export function nudgeFor(stats, partySize, order) {
 }
 
 /**
+ * TABLE CHECK-OUT — the verification loop.
+ * At order time we PREDICT leftovers; after the meal the table logs the
+ * actual outcome (in a real deployment: an after-photo scored by vision or
+ * the clearing-station weigh; in this demo: a tap-to-choose stand-in).
+ * The three outcomes below are deterministic so every demo run is identical.
+ */
+export function checkoutOutcomes(prediction) {
+  const { plateLeftoverG, totalWeightG } = prediction
+  const scrapG = Math.round(totalWeightG * SCRAP_RATE)
+  return [
+    {
+      key: 'spotless',
+      emoji: '✨',
+      label: 'Spotless',
+      detail: 'Plates cleared — scraps only',
+      measuredG: scrapG,
+    },
+    {
+      key: 'few-bites',
+      emoji: '🥄',
+      label: 'A few bites left',
+      detail: 'Better than tables like yours usually do',
+      measuredG: Math.max(scrapG, Math.round(plateLeftoverG * 0.75)),
+    },
+    {
+      key: 'lots-left',
+      emoji: '🍚',
+      label: 'Quite a lot left',
+      detail: 'More than the estimate',
+      measuredG: Math.min(Math.round(plateLeftoverG * 1.35), Math.round(totalWeightG * 0.55)),
+    },
+  ]
+}
+
+/**
+ * Points for beating the prediction, split across the party's accounts.
+ * Reward the BEAT (predicted − measured), not absolute waste — every table
+ * gets a fair target regardless of size or dish mix. Participation earns a
+ * small flat credit either way (logging the outcome is itself the data the
+ * system learns from). 1 point ≈ 10 g of waste avoided, matching the
+ * eco-points scale on the receipt.
+ */
+export function checkoutPoints(predictedG, measuredG, partySize) {
+  const PARTICIPATION = 5
+  const beatG = Math.max(0, predictedG - measuredG)
+  const total = PARTICIPATION + Math.round(beatG / 10)
+  return {
+    total,
+    perPerson: Math.max(1, Math.floor(total / partySize)),
+    beatG,
+    beat: measuredG < predictedG,
+  }
+}
+
+/**
  * Green-receipt math: what did this table save by right-sizing?
  * Baseline = the same order with every portionable line at Regular.
  * (If nothing was downsized, savings are zero — we never invent credit.)

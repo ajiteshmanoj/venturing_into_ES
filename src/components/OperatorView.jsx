@@ -245,6 +245,14 @@ export default function OperatorView({ visits }) {
                       New
                     </span>
                   )}
+                  {v.verified && (
+                    <span
+                      className="rounded-full border border-brand-200 bg-brand-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-700"
+                      title="Leftovers measured at table check-out — not an estimate"
+                    >
+                      ✓ Checked-out
+                    </span>
+                  )}
                   <span className="font-semibold whitespace-nowrap">Table of {v.partySize}</span>
                   <span className="truncate text-stone-400" title={v.dishIds.map((id) => MENU_BY_ID[id].name).join(', ')}>
                     {v.dishIds.map((id) => MENU_BY_ID[id].emoji).join(' ')}

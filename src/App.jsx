@@ -26,6 +26,11 @@ export default function App() {
 
   const addVisit = (visit) => setVisits((v) => [...v, visit])
 
+  // Table check-out: replace the predicted waste with the measured outcome —
+  // the model then re-learns from reality, not from its own guess.
+  const updateVisit = (id, patch) =>
+    setVisits((v) => v.map((visit) => (visit.id === id ? { ...visit, ...patch } : visit)))
+
   // Demo Day Reset — wipe live orders back to the seeded state for a clean re-run
   const resetDemo = () => {
     setVisits(SEED_VISITS)
@@ -83,7 +88,7 @@ export default function App() {
 
       <main className="mx-auto max-w-6xl px-5 py-8">
         {view === 'diner' ? (
-          <DinerView key={resetKey} stats={stats} addVisit={addVisit} goToOperator={() => setView('operator')} />
+          <DinerView key={resetKey} stats={stats} addVisit={addVisit} updateVisit={updateVisit} goToOperator={() => setView('operator')} />
         ) : (
           <OperatorView visits={visits} />
         )}

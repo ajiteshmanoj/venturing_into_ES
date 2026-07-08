@@ -5,6 +5,7 @@ import {
 } from '../data/seedData.js'
 import {
   predictWaste, nudgeFor, recommendedDishCount, rightSizingSavings,
+  checkoutOutcomes, checkoutPoints,
 } from '../engine/recommend.js'
 import { Card, SectionLabel, TrafficLight, OnboardingHint, LEVELS, fmtG, fmtSGD } from './ui.jsx'
 
@@ -14,11 +15,12 @@ const RESTAURANT = { name: 'Golden Wok Zi Char', nameZh: '金锅小炒', table: 
 
 let lineKey = 0
 
-export default function DinerView({ stats, addVisit, goToOperator }) {
+export default function DinerView({ stats, addVisit, updateVisit, goToOperator }) {
   const [partySize, setPartySize] = useState(null)
   const [order, setOrder] = useState([]) // [{ key, dishId, portion }]
   const [tapau, setTapau] = useState(false)
   const [confirmed, setConfirmed] = useState(null)
+  const [checkingOut, setCheckingOut] = useState(false)
   const [whyOpen, setWhyOpen] = useState(false)
   const [flash, setFlash] = useState(false)
 
@@ -93,6 +95,7 @@ export default function DinerView({ stats, addVisit, goToOperator }) {
 
   const startOver = () => {
     setConfirmed(null)
+    setCheckingOut(false)
     setOrder([])
     setPartySize(null)
     setTapau(false)
@@ -100,8 +103,25 @@ export default function DinerView({ stats, addVisit, goToOperator }) {
   }
 
   // ---------------------------------------------------------------- screens
+  if (confirmed && checkingOut) {
+    return (
+      <TableCheckout
+        confirmed={confirmed}
+        updateVisit={updateVisit}
+        startOver={startOver}
+        goToOperator={goToOperator}
+      />
+    )
+  }
   if (confirmed) {
-    return <GreenReceipt confirmed={confirmed} startOver={startOver} goToOperator={goToOperator} />
+    return (
+      <GreenReceipt
+        confirmed={confirmed}
+        startOver={startOver}
+        goToOperator={goToOperator}
+        onCheckout={() => setCheckingOut(true)}
+      />
+    )
   }
 
   return (
@@ -596,7 +616,7 @@ function Row({ k, v }) {
 
 /* Step 3 — the green receipt: real bill anatomy + the sustainability story,
  * and the moment the visit enters shared history. */
-function GreenReceipt({ confirmed, startOver, goToOperator }) {
+function GreenReceipt({ confirmed, startOver, goToOperator, onCheckout }) {
   const { prediction, order, visit, savings } = confirmed
   const l = LEVELS[prediction.level]
   const service = prediction.totalPrice * SERVICE_CHARGE
@@ -678,22 +698,28 @@ function GreenReceipt({ confirmed, startOver, goToOperator }) {
           )}
 
           <p className="mt-4 text-center text-xs text-stone-400">
-            This visit was just written into the restaurant's live history — flip to the Operator
-            View to watch it arrive.
+            This visit was just written into the restaurant's live history — after the meal, check
+            out the table to verify the estimate and collect points.
           </p>
 
           <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-center">
             <button
-              onClick={goToOperator}
+              onClick={onCheckout}
               className="rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-card transition-colors hover:bg-brand-700"
             >
-              See it land on the dashboard →
+              📸 Table check-out (after the meal) →
+            </button>
+            <button
+              onClick={goToOperator}
+              className="rounded-xl border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-stone-600 transition-colors hover:border-brand-300 hover:text-brand-700"
+            >
+              Skip to dashboard
             </button>
             <button
               onClick={startOver}
               className="rounded-xl border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-stone-600 transition-colors hover:border-brand-300 hover:text-brand-700"
             >
-              Start a new table
+              New table
             </button>
           </div>
         </div>
@@ -707,6 +733,183 @@ function ReceiptStat({ v, k }) {
     <div>
       <p className="font-display text-lg font-semibold text-brand-800">{v}</p>
       <p className="text-[11px] text-brand-700/70">{k}</p>
+    </div>
+  )
+}
+
+/*
+ * TABLE CHECK-OUT — the verification loop + points, in one screen.
+ * Before/after photos stand in for the real measurement (clearing-station
+ * weigh or vision-scored after-photo); the presenter taps the outcome so
+ * every demo run is deterministic. Beating the prediction earns points,
+ * split across every account at the table.
+ */
+const PARTY_NAMES = ['You', 'Wei Ming', 'Priya', 'Sarah', 'Jun Jie', 'Alex', 'Mei Lin', 'Raj']
+
+function TableCheckout({ confirmed, updateVisit, startOver, goToOperator }) {
+  const { prediction, order, visit } = confirmed
+  const [outcome, setOutcome] = useState(null) // one of checkoutOutcomes()
+  const [logged, setLogged] = useState(false)
+
+  const outcomes = checkoutOutcomes(prediction)
+  const predictedG = prediction.plateLeftoverG
+  const predictedPct = Math.round((predictedG / prediction.totalWeightG) * 100)
+  const members = PARTY_NAMES.slice(0, visit.partySize)
+
+  const points = outcome ? checkoutPoints(predictedG, outcome.measuredG, visit.partySize) : null
+
+  const logResult = () => {
+    // The measured outcome replaces the prediction in the shared history —
+    // the model now learns from reality, and the feed marks it verified.
+    updateVisit(visit.id, { wastedWeightG: outcome.measuredG, verified: true })
+    setLogged(true)
+  }
+
+  return (
+    <div className="mx-auto max-w-xl animate-rise">
+      <Card className="p-7">
+        <SectionLabel>After the meal</SectionLabel>
+        <h2 className="font-display mt-1 text-2xl font-semibold tracking-tight">
+          Table check-out · Table {RESTAURANT.table}
+        </h2>
+        <p className="mt-1.5 text-sm text-stone-500">
+          When you ordered, we estimated{' '}
+          <strong className="text-stone-700">{fmtG(predictedG)} ({predictedPct}%)</strong> would be
+          left on the table. Let's see how you actually did.
+        </p>
+
+        {/* "Before" — the dishes as they arrived (we have their photos) */}
+        <div className="mt-5">
+          <p className="text-xs font-semibold uppercase tracking-widest text-stone-400">
+            📸 Before — as served
+          </p>
+          <div className="mt-2 flex gap-2 overflow-hidden rounded-xl">
+            {order.slice(0, 5).map((line) => (
+              <img
+                key={line.key}
+                src={dishPhoto(line.dishId)}
+                alt={MENU_BY_ID[line.dishId].name}
+                className="h-16 min-w-0 flex-1 rounded-lg object-cover"
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* "After" — the demo stand-in for the measured result */}
+        <div className="mt-5">
+          <p className="text-xs font-semibold uppercase tracking-widest text-stone-400">
+            📸 After — tap what the photo shows
+          </p>
+          <div className="mt-2 grid gap-2 sm:grid-cols-3">
+            {outcomes.map((o) => (
+              <button
+                key={o.key}
+                onClick={() => !logged && setOutcome(o)}
+                disabled={logged}
+                aria-pressed={outcome?.key === o.key}
+                className={`rounded-xl border p-3.5 text-left transition-all ${
+                  outcome?.key === o.key
+                    ? 'border-brand-400 bg-brand-50 ring-2 ring-brand-300'
+                    : 'border-stone-200 bg-white hover:border-brand-300'
+                } ${logged && outcome?.key !== o.key ? 'opacity-40' : ''}`}
+              >
+                <span className="text-xl" aria-hidden>{o.emoji}</span>
+                <p className="mt-1 text-sm font-bold">{o.label}</p>
+                <p className="mt-0.5 text-xs text-stone-500">{o.detail}</p>
+                <p className="mt-1.5 text-xs font-semibold tabular-nums text-stone-600">
+                  ≈ {fmtG(o.measuredG)} left
+                </p>
+              </button>
+            ))}
+          </div>
+          <p className="mt-2 text-[11px] leading-relaxed text-stone-400">
+            Demo stand-in: in a real deployment the after-photo is scored automatically (or the
+            clearing station weighs the leftovers) — no self-reporting.
+          </p>
+        </div>
+
+        {/* Result + points */}
+        {outcome && (
+          <div className="animate-pop mt-5 rounded-2xl border border-stone-150 border-stone-200 bg-stone-50/70 p-5">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-sm text-stone-500">Estimated → measured</p>
+              <p className="font-display text-xl font-semibold tabular-nums">
+                {fmtG(predictedG)} → <span className={points.beat ? 'text-status-good' : 'text-status-warn'}>{fmtG(outcome.measuredG)}</span>
+              </p>
+            </div>
+
+            {points.beat ? (
+              <p className="mt-2 text-sm text-stone-600">
+                🎉 You beat the estimate by <strong>{fmtG(points.beatG)}</strong> — that's food on
+                plates, not in the bin.
+              </p>
+            ) : (
+              <p className="mt-2 text-sm text-stone-600">
+                No beat this time — but the result still teaches the model. Half portions or a tapau
+                make it easy next visit.
+              </p>
+            )}
+
+            {/* Points split across the party's accounts */}
+            <div className="mt-4 rounded-xl bg-white p-4 shadow-card">
+              <div className="flex items-baseline justify-between">
+                <p className="text-sm font-bold text-stone-800">MakanSense Rewards</p>
+                <p className="font-display text-lg font-semibold text-brand-700">
+                  +{points.total} pts
+                </p>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {members.map((name) => (
+                  <span
+                    key={name}
+                    className="flex items-center gap-1.5 rounded-full bg-brand-50 py-1 pl-1.5 pr-3 text-xs font-semibold text-brand-800"
+                  >
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-600 text-[10px] font-bold text-white" aria-hidden>
+                      {name.slice(0, 1)}
+                    </span>
+                    {name} +{points.perPerson}
+                  </span>
+                ))}
+              </div>
+              <p className="mt-3 rounded-lg bg-stone-50 px-3 py-2 text-[11px] leading-relaxed text-stone-500">
+                🏛 Illustrative national programme — modelled on Healthy 365 / the National Steps
+                Challenge: points redeemable as CDC or hawker vouchers. Fictional partnership,
+                shown for demo purposes.
+              </p>
+            </div>
+
+            {!logged ? (
+              <button
+                onClick={logResult}
+                className="mt-4 w-full rounded-xl bg-brand-600 py-3 text-sm font-bold text-white shadow-card transition-colors hover:bg-brand-700"
+              >
+                Log result & collect points
+              </button>
+            ) : (
+              <div className="animate-rise mt-4">
+                <p className="text-center text-xs text-stone-400">
+                  ✓ Measured result saved — the model just re-learned from reality, and this visit
+                  is now marked verified on the operator feed.
+                </p>
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:justify-center">
+                  <button
+                    onClick={goToOperator}
+                    className="rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-card transition-colors hover:bg-brand-700"
+                  >
+                    See it verified on the dashboard →
+                  </button>
+                  <button
+                    onClick={startOver}
+                    className="rounded-xl border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-stone-600 transition-colors hover:border-brand-300 hover:text-brand-700"
+                  >
+                    Start a new table
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </Card>
     </div>
   )
 }
