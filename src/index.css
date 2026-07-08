@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+/*
+ * MakanSense design tokens — calm, premium SaaS aesthetic.
+ * Teal/sage accents over warm neutrals (no bright eco-green, no default blue).
+ * Chart series colors validated for CVD separation + contrast on #faf9f6.
+ */
+@theme {
+  /* Brand teal — primary accent */
+  --color-brand-50: #f0faf8;
+  --color-brand-100: #d5f2ec;
+  --color-brand-200: #abe4da;
+  --color-brand-300: #74cfc2;
+  --color-brand-400: #3eb3a5;
+  --color-brand-500: #17998b;
+  --color-brand-600: #0d9488;
+  --color-brand-700: #0c6e64;
+  --color-brand-800: #0d5850;
+  --color-brand-900: #0e4842;
+
+  /* Sage — secondary accent for soft fills */
+  --color-sage-100: #eef0e6;
+  --color-sage-200: #dde2cd;
+  --color-sage-300: #c2cba6;
+  --color-sage-400: #a3b07e;
+  --color-sage-500: #87965f;
+  --color-sage-600: #6b7a49;
+  --color-sage-700: #55613b;
+
+  /* Warm neutral page plane */
+  --color-cream: #faf9f6;
+  --color-card: #fffefb;
+
+  /* Chart series (validated): teal + amber */
+  --color-chart-1: #0d9488;
+  --color-chart-2: #bf7407;
+
+  /* Status — always paired with icon + label, never color alone */
+  --color-status-good: #15803d;
+  --color-status-warn: #b45309;
+  --color-status-high: #b91c1c;
+
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --shadow-card: 0 1px 2px rgba(28, 25, 23, 0.04), 0 4px 16px rgba(28, 25, 23, 0.05);
+  --shadow-lift: 0 2px 4px rgba(28, 25, 23, 0.06), 0 12px 32px rgba(28, 25, 23, 0.10);
+}
+
+html {
+  background-color: var(--color-cream);
+}
+
+body {
+  font-family: var(--font-sans);
+  color: #1c1917;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Micro-interactions */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pop-in {
+  0%   { opacity: 0; transform: scale(0.96); }
+  70%  { transform: scale(1.01); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.35); }
+  100% { box-shadow: 0 0 0 12px rgba(13, 148, 136, 0); }
+}
+.animate-rise { animation: rise-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-pop  { animation: pop-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.pulse-once   { animation: pulse-ring 0.8s ease-out 1; }
+
+/* Waste meter fill transitions smoothly as the order changes */
+.meter-fill {
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.5s ease;
+}
+.traffic-swatch {
+  transition: background-color 0.5s ease, border-color 0.5s ease, color 0.5s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise, .animate-pop, .pulse-once { animation: none; }
+  .meter-fill, .traffic-swatch { transition: none; }
+}
