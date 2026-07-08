@@ -283,7 +283,11 @@ function OrderScreen(props) {
                       </div>
                       {dish.portionable ? (
                         <div className="mt-2 flex gap-1" role="radiogroup" aria-label={`${dish.name} portion size`}>
-                          {Object.entries(PORTIONS).map(([key, p]) => (
+                          {Object.entries(PORTIONS)
+                            // Solo diners have no one to share with — hide the
+                            // Sharing size (unless it's somehow already selected)
+                            .filter(([key]) => partySize > 1 || key !== 'sharing' || line.portion === 'sharing')
+                            .map(([key, p]) => (
                             <button
                               key={key}
                               role="radio"
