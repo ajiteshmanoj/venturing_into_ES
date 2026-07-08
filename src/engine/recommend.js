@@ -17,9 +17,12 @@
 import {
   MENU_BY_ID,
   PORTIONS,
+  SCRAP_RATE,
   TAPAU_RECOVERY,
+  appetiteCoverage,
   baseWasteRate,
   bucketForRatio,
+  coverageRamp,
   mixFactor,
   partyBand,
 } from '../data/seedData.js'
@@ -85,6 +88,13 @@ export function lookupWasteRate(stats, partySize, ratio) {
  * RULE 2 — predict the waste for the current order, with the full audit
  * trail the "Why this estimate?" panel renders.
  *
+ * The prediction is APPETITE-AWARE: historical waste behaviour describes
+ * tables that ordered more than they could eat. When the order sits well
+ * within the table's appetite (~420 g/person), the table finishes it —
+ * only unavoidable scraps (~3%) remain. The coverage ramp blends from
+ * "scraps only" to the full historical rate as the order approaches and
+ * exceeds appetite, so waste scales with the WHOLE order, not per dish.
+ *
  * opts.tapau: the table plans to pack leftovers to go. Packed food is a
  * meal, not waste — we credit back TAPAU_RECOVERY (65%) of the predicted
  * leftovers. Conservative: soups/dressed veg don't travel well.
@@ -95,13 +105,18 @@ export function predictWaste(stats, partySize, order, opts = {}) {
     return {
       ...metrics, ratio: 0, rate: 0, baseRate: 0, level: 'none', n: 0,
       predictedWasteG: 0, plateLeftoverG: 0, tapauSavedG: 0, tapau: false,
+      coverage: 0, capacityG: 0, ramp: 0,
     }
   }
   const ratio = metrics.effectiveDishes / partySize
   const { rate: historyRate, n, band, bucket } = lookupWasteRate(stats, partySize, ratio)
 
-  // Dish-mix adjustment, capped at the buffet-waste ceiling used everywhere
-  const rate = Math.min(historyRate * metrics.mix, 0.55)
+  // Historical behaviour × dish mix = what similar over-ordering tables left…
+  const behaviourRate = Math.min(historyRate * metrics.mix, 0.55)
+  // …scaled by how far this order actually exceeds the table's appetite.
+  const { coverage, capacityG } = appetiteCoverage(metrics.totalWeightG, partySize)
+  const ramp = coverageRamp(metrics.totalWeightG, partySize)
+  const rate = SCRAP_RATE + (behaviourRate - SCRAP_RATE) * ramp
   const plateLeftoverG = Math.round(metrics.totalWeightG * rate)
 
   // Tapau credit: packed leftovers leave as meals, not bin weight
@@ -116,7 +131,7 @@ export function predictWaste(stats, partySize, order, opts = {}) {
   return {
     ...metrics, ratio, rate: effectiveRate, baseRate: historyRate,
     predictedWasteG, plateLeftoverG, tapauSavedG, tapau: !!opts.tapau,
-    level, n, band, bucket,
+    level, n, band, bucket, coverage, capacityG, ramp,
   }
 }
 
@@ -148,11 +163,20 @@ export function recommendedDishCount(partySize) {
  */
 export function nudgeFor(stats, partySize, order) {
   if (!partySize || order.length === 0) return null
-  const { effectiveDishes } = orderMetrics(order)
+  const { effectiveDishes, totalWeightG } = orderMetrics(order)
   const ratio = effectiveDishes / partySize
   const rec = recommendedDishCount(partySize)
   const { n } = lookupWasteRate(stats, partySize, ratio)
   const evidence = n >= 6 ? ` — based on ${n} similar tables` : ''
+
+  // Under-ordering: not a waste problem, but a hungry-table problem.
+  const { coverage } = appetiteCoverage(totalWeightG, partySize)
+  if (partySize > 1 && coverage < 0.6) {
+    return {
+      tone: 'info',
+      text: `This may be on the light side for ${partySize} people (~${Math.round(coverage * 100)}% of a typical table's appetite) — you'll likely finish everything. Add more anytime.`,
+    }
+  }
 
   if (ratio > 1.6) {
     return {

@@ -318,10 +318,12 @@ function OrderScreen(props) {
                 className={`animate-rise mt-4 flex items-start gap-2 rounded-xl border px-3.5 py-3 text-sm ${
                   nudge.tone === 'high'
                     ? 'border-red-200 bg-red-50 text-red-900'
-                    : 'border-amber-200 bg-amber-50 text-amber-900'
+                    : nudge.tone === 'info'
+                      ? 'border-brand-200 bg-brand-50 text-brand-900'
+                      : 'border-amber-200 bg-amber-50 text-amber-900'
                 }`}
               >
-                <span aria-hidden className="mt-0.5">{nudge.tone === 'high' ? '⚠' : '△'}</span>
+                <span aria-hidden className="mt-0.5">{nudge.tone === 'high' ? '⚠' : nudge.tone === 'info' ? 'ⓘ' : '△'}</span>
                 <span>{nudge.text}</span>
               </div>
             )}
@@ -485,7 +487,7 @@ function WasteGauge({ rate, level }) {
 function WastePrediction({ prediction, partySize, tapau, setTapau, whyOpen, setWhyOpen, onRightSize }) {
   const {
     predictedWasteG, plateLeftoverG, tapauSavedG, rate, baseRate, mix,
-    level, ratio, effectiveDishes, n, totalWeightG,
+    level, ratio, effectiveDishes, n, totalWeightG, coverage, capacityG, ramp,
   } = prediction
   const l = LEVELS[level]
 
@@ -551,21 +553,31 @@ function WastePrediction({ prediction, partySize, tapau, setTapau, whyOpen, setW
         <dl className="animate-rise mt-2 space-y-1.5 rounded-xl bg-stone-50 p-3.5 text-sm text-stone-600">
           <Row k="Party size" v={`${partySize} ${partySize === 1 ? 'person' : 'people'}`} />
           <Row k="Dishes ordered" v={`${effectiveDishes.toFixed(1).replace(/\.0$/, '')} (Half counts as 0.6)`} />
-          <Row k="Dishes per person" v={ratio.toFixed(2)} />
-          <Row
-            k="Historical match"
-            v={n > 0 ? `${n} past visits by tables your size ordering like this` : 'calibrated research curve (few similar visits yet)'}
-          />
-          <Row k="Their average waste" v={`${Math.round(baseRate * 100)}% of food ordered`} />
-          <Row
-            k="Dish-mix adjustment"
-            v={`×${mix.toFixed(2)} ${mix > 1.02 ? '(carb/soup-heavy mixes come back unfinished more)' : mix < 0.98 ? '(premium proteins usually get finished)' : '(typical mix)'}`}
-          />
+          <Row k="Food on the table" v={`${fmtG(totalWeightG)} of ~${fmtG(capacityG)} appetite (${Math.round(coverage * 100)}%)`} />
+          {ramp >= 0.05 ? (
+            <>
+              <Row k="Dishes per person" v={ratio.toFixed(2)} />
+              <Row
+                k="Historical match"
+                v={n > 0 ? `${n} past visits by tables your size ordering like this` : 'calibrated research curve (few similar visits yet)'}
+              />
+              <Row k="Their average waste" v={`${Math.round(baseRate * 100)}% of food ordered`} />
+              <Row
+                k="Dish-mix adjustment"
+                v={`×${mix.toFixed(2)} ${mix > 1.02 ? '(carb/soup-heavy mixes come back unfinished more)' : mix < 0.98 ? '(premium proteins usually get finished)' : '(typical mix)'}`}
+              />
+              {ramp < 0.95 && (
+                <Row k="Appetite scaling" v={`×${ramp.toFixed(2)} (order is close to what your table can finish)`} />
+              )}
+            </>
+          ) : (
+            <Row k="Within appetite" v="table finishes it — only scraps (~3%) expected" />
+          )}
           {tapau && <Row k="Tapau credit" v={`−${Math.round(prediction.plateLeftoverG ? (tapauSavedG / plateLeftoverG) * 100 : 0)}% of leftovers packed home`} />}
           <p className="pt-1.5 text-xs leading-relaxed text-stone-400">
-            Simple rules, no black box: we bucket your dishes-per-person ratio, look up how much
-            similar tables actually left behind, adjust for your dish mix, and apply that rate to
-            your order's weight.
+            Simple rules, no black box: waste behaviour only applies to food beyond what your table
+            can eat (~420 g per person). Past that, we look up how much similar tables left behind
+            and adjust for your dish mix.
           </p>
         </dl>
       )}

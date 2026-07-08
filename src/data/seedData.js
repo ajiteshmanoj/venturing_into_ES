@@ -86,6 +86,30 @@ export const GST = 0.09
 // conservative, since soups and dressed vegetables don't travel well.
 export const TAPAU_RECOVERY = 0.65
 
+// -------------------------------------------------------------------------
+// APPETITE MODEL (common-sense anchors, labelled as such).
+// A typical adult eats ~420 g of shared food in a zi char sitting. Waste
+// behaviour only kicks in once the order EXCEEDS the table's appetite:
+// under-ordered tables finish everything (only unavoidable scraps — bones,
+// shells, sauce — remain, ~3% of weight). The ramp below transitions from
+// "scraps only" (order ≤ ~75% of appetite) to the full historical waste
+// rate (order ≥ ~105% of appetite). Used by BOTH the seed-data generator
+// and the live prediction engine so they can never disagree.
+// -------------------------------------------------------------------------
+export const APPETITE_G_PER_PERSON = 420
+export const SCRAP_RATE = 0.03
+
+export function appetiteCoverage(totalWeightG, partySize) {
+  const capacityG = partySize * APPETITE_G_PER_PERSON
+  return { capacityG, coverage: capacityG ? totalWeightG / capacityG : 0 }
+}
+
+/* 0 = order well within appetite (scraps only) → 1 = full waste behaviour */
+export function coverageRamp(totalWeightG, partySize) {
+  const { coverage } = appetiteCoverage(totalWeightG, partySize)
+  return Math.min(1, Math.max(0, (coverage - 0.75) / 0.3))
+}
+
 // ---------------------------------------------------------------------------
 // Deterministic RNG (mulberry32) — fixed seed so the demo is identical
 // on every run in front of the judges.
@@ -198,10 +222,14 @@ function generateVisits() {
     }))
     const totalWeight = dishWeights.reduce((s, d) => s + d.weightG, 0)
 
+    // Behavioural waste only applies to food beyond the table's appetite —
+    // under-ordered tables finish everything bar scraps (see APPETITE MODEL).
     const realizedRatio = dishCount / partySize
+    const behaviourRate = baseWasteRate(realizedRatio) * mixFactor(dishWeights)
+    const ramp = coverageRamp(totalWeight, partySize)
     const wasteRate = clamp(
-      baseWasteRate(realizedRatio) * mixFactor(dishWeights) + gauss() * 0.045,
-      0.02,
+      SCRAP_RATE + (behaviourRate - SCRAP_RATE) * ramp + gauss() * 0.045 * Math.max(ramp, 0.3),
+      0.01,
       0.55,
     )
 
