@@ -6,13 +6,15 @@ import OperatorView from './components/OperatorView.jsx'
 
 /*
  * MakanSense — right-size every table.
- * ("Makan" = to eat, in Singlish. The name RightPortion works too; MakanSense
- * felt more local and more memorable for a zi char pilot.)
+ * ("Makan" = to eat, in Singlish.)
  *
  * All state lives in React memory — no backend, no localStorage. Confirmed
  * diner orders are appended to `visits`, and because the operator dashboard
  * AND the recommendation stats both derive from `visits`, one confirmed
  * order visibly updates the whole system: the closed loop, live on stage.
+ *
+ * The diner flow is framed as the QR-ordering experience of a fictional
+ * zi char restaurant ("Golden Wok Zi Char", Table 12) powered by MakanSense.
  */
 export default function App() {
   const [view, setView] = useState('diner')
@@ -34,22 +36,24 @@ export default function App() {
   return (
     <div className="min-h-screen bg-cream text-stone-900">
       <header className="sticky top-0 z-20 border-b border-stone-900/5 bg-cream/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-4">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-5 py-3">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-600 text-xl text-white shadow-card" aria-hidden>
               🥢
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight">MakanSense</h1>
-              <p className="hidden text-xs text-stone-500 sm:block">Right-size every table. Waste less, spend less.</p>
+              <h1 className="font-display text-xl font-semibold tracking-tight">MakanSense</h1>
+              <p className="hidden text-[11px] tracking-wide text-stone-500 sm:block">
+                RIGHT-SIZE EVERY TABLE · WASTE LESS, SPEND LESS
+              </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             <div className="flex rounded-full border border-stone-200 bg-white p-1 shadow-card" role="tablist" aria-label="View switcher">
               {[
-                { id: 'diner', label: '🍽 Diner View' },
-                { id: 'operator', label: '📊 Operator View' },
+                { id: 'diner', label: '🍽 Diner' },
+                { id: 'operator', label: '📊 Operator' },
               ].map((t) => (
                 <button
                   key={t.id}
@@ -71,7 +75,7 @@ export default function App() {
               title="Reset the demo to its seeded state"
               className="rounded-full border border-stone-200 bg-white px-3.5 py-2 text-xs font-medium text-stone-500 shadow-card transition-colors hover:border-brand-300 hover:text-brand-700"
             >
-              ↺ Demo Day Reset
+              ↺ Reset
             </button>
           </div>
         </div>

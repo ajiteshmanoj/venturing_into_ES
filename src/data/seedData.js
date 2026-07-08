@@ -17,7 +17,7 @@
  *    (~30–40% waste-rate reduction) sits inside that published envelope.
  *  - Key design principle from the research: information alone does NOT
  *    reduce waste — giving diners a one-tap ACTION (smaller portion, fewer
- *    dishes) is what works. The whole UI is built around that.
+ *    dishes, tapau) is what works. The whole UI is built around that.
  *
  * Portion weights are common-sense anchors, not a measured dataset:
  * fried rice ~300–400g, shared zi char dish ~200–350g, steamed fish
@@ -26,32 +26,47 @@
  * Waste-rate rule baked into the generator: a table ordering ~1 dish per
  * person wastes little (~5–10%); waste climbs roughly linearly as
  * dishes-per-person exceeds ~1, capped near the ~50% buffet figure.
+ * A per-dish "waste propensity" models the familiar pattern that bulk carbs
+ * and soups come back unfinished more often than premium proteins.
  * Gaussian noise is added so the data looks organic, and a fixed RNG seed
  * keeps every demo run identical.
  * ============================================================================
  */
 
 // ---------------------------------------------------------------------------
-// Menu — 12 shared zi char dishes
-// portionWeightG uses the anchors above; typicalServings = people one
-// regular portion feeds; portionable = restaurant offers Half / Sharing sizes
+// Menu — 12 shared zi char dishes.
+// portionWeightG uses the anchors above; typicalServings = people one regular
+// portion feeds; portionable = kitchen offers Half / Sharing sizes;
+// wastePropensity = how often this dish comes back unfinished relative to the
+// table average (1.0 = average; >1 chronically left over; <1 usually finished).
+// Photos: Wikimedia Commons, see public/dishes/CREDITS.md.
 // ---------------------------------------------------------------------------
 export const MENU = [
-  { id: 'fried-rice',    name: 'Yangzhou Fried Rice',   category: 'rice/noodle', price: 12, portionWeightG: 380, typicalServings: 2, portionable: true,  emoji: '🍚' },
-  { id: 'hor-fun',       name: 'Beef Hor Fun',          category: 'rice/noodle', price: 13, portionWeightG: 400, typicalServings: 2, portionable: true,  emoji: '🍜' },
-  { id: 'ss-pork',       name: 'Sweet & Sour Pork',     category: 'meat',        price: 15, portionWeightG: 300, typicalServings: 3, portionable: true,  emoji: '🍖' },
-  { id: 'kungpao',       name: 'Kung Pao Chicken',      category: 'meat',        price: 14, portionWeightG: 290, typicalServings: 3, portionable: true,  emoji: '🌶️' },
-  { id: 'cereal-chic',   name: 'Cereal Chicken',        category: 'meat',        price: 15, portionWeightG: 280, typicalServings: 3, portionable: true,  emoji: '🥣' },
-  { id: 'kailan',        name: 'Stir-fried Kailan',     category: 'vegetable',   price: 10, portionWeightG: 250, typicalServings: 3, portionable: true,  emoji: '🥬' },
-  { id: 'sambal-veg',    name: 'Sambal Vegetables',     category: 'vegetable',   price: 11, portionWeightG: 260, typicalServings: 3, portionable: true,  emoji: '🥗' },
-  { id: 'se-prawns',     name: 'Salted Egg Prawns',     category: 'seafood',     price: 22, portionWeightG: 260, typicalServings: 3, portionable: true,  emoji: '🍤' },
-  { id: 'steam-fish',    name: 'Steamed Whole Seabass', category: 'seafood',     price: 28, portionWeightG: 520, typicalServings: 4, portionable: false, emoji: '🐟' },
-  { id: 'mapo',          name: 'Mapo Tofu',             category: 'tofu',        price: 10, portionWeightG: 320, typicalServings: 3, portionable: true,  emoji: '🥘' },
-  { id: 'claypot-tofu',  name: 'Claypot Tofu',          category: 'tofu',        price: 13, portionWeightG: 350, typicalServings: 3, portionable: true,  emoji: '🍲' },
-  { id: 'tomyum',        name: 'Tom Yum Soup',          category: 'soup',        price: 12, portionWeightG: 550, typicalServings: 4, portionable: true,  emoji: '🍵' },
+  { id: 'fried-rice',   name: 'Yangzhou Fried Rice',   nameZh: '扬州炒饭', category: 'rice/noodle', price: 12, portionWeightG: 380, typicalServings: 2, portionable: true,  wastePropensity: 1.25, emoji: '🍚' },
+  { id: 'hor-fun',      name: 'Beef Hor Fun',          nameZh: '干炒牛河', category: 'rice/noodle', price: 13, portionWeightG: 400, typicalServings: 2, portionable: true,  wastePropensity: 1.2,  emoji: '🍜' },
+  { id: 'ss-pork',      name: 'Sweet & Sour Pork',     nameZh: '咕噜肉',   category: 'meat',        price: 15, portionWeightG: 300, typicalServings: 3, portionable: true,  wastePropensity: 0.95, emoji: '🍖' },
+  { id: 'kungpao',      name: 'Kung Pao Chicken',      nameZh: '宫保鸡丁', category: 'meat',        price: 14, portionWeightG: 290, typicalServings: 3, portionable: true,  wastePropensity: 0.9,  emoji: '🌶️' },
+  { id: 'hcg-chicken',  name: 'Har Cheong Gai',        nameZh: '虾酱鸡',   category: 'meat',        price: 15, portionWeightG: 280, typicalServings: 3, portionable: true,  wastePropensity: 0.8,  emoji: '🍗' },
+  { id: 'kailan',       name: 'Stir-fried Kailan',     nameZh: '蚝油芥兰', category: 'vegetable',   price: 10, portionWeightG: 250, typicalServings: 3, portionable: true,  wastePropensity: 1.1,  emoji: '🥬' },
+  { id: 'sambal-veg',   name: 'Sambal Kangkong',       nameZh: '马来风光', category: 'vegetable',   price: 11, portionWeightG: 260, typicalServings: 3, portionable: true,  wastePropensity: 1.05, emoji: '🥗' },
+  { id: 'se-prawns',    name: 'Salted Egg Prawns',     nameZh: '咸蛋虾',   category: 'seafood',     price: 22, portionWeightG: 260, typicalServings: 3, portionable: true,  wastePropensity: 0.7,  emoji: '🍤' },
+  { id: 'steam-fish',   name: 'Steamed Whole Seabass', nameZh: '清蒸鲈鱼', category: 'seafood',     price: 28, portionWeightG: 520, typicalServings: 4, portionable: false, wastePropensity: 0.9,  emoji: '🐟' },
+  { id: 'mapo',         name: 'Mapo Tofu',             nameZh: '麻婆豆腐', category: 'tofu',        price: 10, portionWeightG: 320, typicalServings: 3, portionable: true,  wastePropensity: 1.05, emoji: '🥘' },
+  { id: 'claypot-tofu', name: 'Claypot Tofu',          nameZh: '砂锅豆腐', category: 'tofu',        price: 13, portionWeightG: 350, typicalServings: 3, portionable: true,  wastePropensity: 1.0,  emoji: '🍲' },
+  { id: 'tomyum',       name: 'Tom Yum Soup',          nameZh: '冬炎汤',   category: 'soup',        price: 12, portionWeightG: 550, typicalServings: 4, portionable: true,  wastePropensity: 1.3,  emoji: '🍵' },
 ]
 
 export const MENU_BY_ID = Object.fromEntries(MENU.map((d) => [d.id, d]))
+
+export const dishPhoto = (id) => `/dishes/${id}.jpg`
+
+/* Finish-rate chip shown on dish cards — derived from wastePropensity so the
+ * card claim and the engine's math can never disagree. */
+export function finishChip(dish) {
+  if (dish.wastePropensity <= 0.9) return { tone: 'good', label: 'Usually finished' }
+  if (dish.wastePropensity >= 1.15) return { tone: 'warn', label: 'Often left over' }
+  return null
+}
 
 // Portion sizes a diner can act on — choosing Half reduces BOTH the weight on
 // the table and the bill. dishFactor is how much of "one dish" it counts as
@@ -61,6 +76,15 @@ export const PORTIONS = {
   regular: { label: 'Regular', weightFactor: 1.0, priceFactor: 1.0,  dishFactor: 1.0 },
   sharing: { label: 'Sharing', weightFactor: 1.4, priceFactor: 1.3,  dishFactor: 1.4 },
 }
+
+// Bill realism: standard Singapore restaurant service charge + GST
+export const SERVICE_CHARGE = 0.1
+export const GST = 0.09
+
+// When a table opts to tapau (pack leftovers to go), most of the predicted
+// leftover leaves as a meal instead of waste. We model 65% recovered —
+// conservative, since soups and dressed vegetables don't travel well.
+export const TAPAU_RECOVERY = 0.65
 
 // ---------------------------------------------------------------------------
 // Deterministic RNG (mulberry32) — fixed seed so the demo is identical
@@ -94,6 +118,16 @@ const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x))
 export function baseWasteRate(ratio) {
   if (ratio <= 0.9) return 0.07
   return clamp(0.07 + 0.45 * (ratio - 0.9), 0.07, 0.52)
+}
+
+/* Dish-mix factor: weight-weighted average waste propensity of an order.
+ * A carb-and-soup-heavy order wastes more at the same ratio; a premium-
+ * protein order wastes less. Used by BOTH the generator and the engine. */
+export function mixFactor(dishWeights) {
+  // dishWeights: [{ weightG, propensity }]
+  const total = dishWeights.reduce((s, d) => s + d.weightG, 0)
+  if (!total) return 1
+  return dishWeights.reduce((s, d) => s + d.weightG * d.propensity, 0) / total
 }
 
 // ---------------------------------------------------------------------------
@@ -158,13 +192,18 @@ function generateVisits() {
     const dishCount = Math.max(1, Math.round(ratio * partySize))
 
     const dishIds = pickDishes(dishCount)
-    const totalWeight = dishIds.reduce(
-      (sum, id) => sum + MENU_BY_ID[id].portionWeightG * (0.92 + rand() * 0.16),
-      0,
-    )
+    const dishWeights = dishIds.map((id) => ({
+      weightG: MENU_BY_ID[id].portionWeightG * (0.92 + rand() * 0.16),
+      propensity: MENU_BY_ID[id].wastePropensity,
+    }))
+    const totalWeight = dishWeights.reduce((s, d) => s + d.weightG, 0)
 
     const realizedRatio = dishCount / partySize
-    const wasteRate = clamp(baseWasteRate(realizedRatio) + gauss() * 0.045, 0.02, 0.55)
+    const wasteRate = clamp(
+      baseWasteRate(realizedRatio) * mixFactor(dishWeights) + gauss() * 0.045,
+      0.02,
+      0.55,
+    )
 
     visits.push({
       id: `seed-${i + 1}`,
@@ -233,3 +272,19 @@ export function computeWasteStats(visits) {
   }
   return stats
 }
+
+// ---------------------------------------------------------------------------
+// Peer benchmarks for the operator view — SIMULATED reference points, framed
+// as such in the UI. Rates are consistent with the research calibration
+// (pre-intervention shared-dining settings cluster in the high-20s–30s%).
+// ---------------------------------------------------------------------------
+export const PEER_BENCHMARKS = [
+  { name: 'High-waste peers (top quartile of waste)', rate: 0.38 },
+  { name: 'Median zi char (simulated peer set)', rate: 0.31 },
+  { name: 'Best-in-class peers', rate: 0.16 },
+]
+
+// CO2e per kg of food waste (lifecycle, incl. production) — commonly used
+// planning figure ~2.5 kgCO2e/kg. Car-km equivalence at ~0.17 kgCO2e/km.
+export const CO2E_PER_KG_WASTE = 2.5
+export const CO2E_PER_CAR_KM = 0.17

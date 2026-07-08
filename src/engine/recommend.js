@@ -2,12 +2,13 @@
  * ============================================================================
  * RECOMMENDATION ENGINE — transparent, rule-based. No fake AI.
  *
- * The whole engine is one idea, applied three ways:
+ * The whole engine is one idea, applied a few ways:
  *
  *   Compare THIS table's dishes-per-person ratio against the historical
- *   waste rates of similar tables (same party-size band), and steer the
- *   order toward the ratio that historically minimised waste while still
- *   feeding everyone.
+ *   waste rates of similar tables (same party-size band), adjust for the
+ *   dish mix (bulk carbs/soup come back unfinished more than premium
+ *   protein), and steer the order toward what historically minimised waste
+ *   while still feeding everyone.
  *
  * Everything shown in the "Why this estimate?" panel comes straight from
  * the return values here — there is no hidden state.
@@ -16,9 +17,10 @@
 import {
   MENU_BY_ID,
   PORTIONS,
-  RATIO_BUCKETS,
+  TAPAU_RECOVERY,
   baseWasteRate,
   bucketForRatio,
+  mixFactor,
   partyBand,
 } from '../data/seedData.js'
 
@@ -33,6 +35,7 @@ export function orderMetrics(order) {
   let totalWeightG = 0
   let totalPrice = 0
   let totalServings = 0
+  const dishWeights = []
   for (const item of order) {
     const dish = MENU_BY_ID[item.dishId]
     const portion = PORTIONS[item.portion]
@@ -40,8 +43,20 @@ export function orderMetrics(order) {
     totalWeightG += dish.portionWeightG * portion.weightFactor
     totalPrice += dish.price * portion.priceFactor
     totalServings += dish.typicalServings * portion.weightFactor
+    dishWeights.push({
+      weightG: dish.portionWeightG * portion.weightFactor,
+      propensity: dish.wastePropensity,
+    })
   }
-  return { effectiveDishes, totalWeightG, totalPrice, totalServings }
+  return {
+    effectiveDishes,
+    totalWeightG,
+    totalPrice,
+    totalServings,
+    // Dish-mix factor: >1 means this mix historically comes back unfinished
+    // more than average (e.g. two carbs + soup); <1 means it gets finished.
+    mix: mixFactor(dishWeights),
+  }
 }
 
 /**
@@ -69,21 +84,40 @@ export function lookupWasteRate(stats, partySize, ratio) {
 /**
  * RULE 2 — predict the waste for the current order, with the full audit
  * trail the "Why this estimate?" panel renders.
+ *
+ * opts.tapau: the table plans to pack leftovers to go. Packed food is a
+ * meal, not waste — we credit back TAPAU_RECOVERY (65%) of the predicted
+ * leftovers. Conservative: soups/dressed veg don't travel well.
  */
-export function predictWaste(stats, partySize, order) {
+export function predictWaste(stats, partySize, order, opts = {}) {
   const metrics = orderMetrics(order)
   if (order.length === 0 || !partySize) {
-    return { ...metrics, ratio: 0, predictedWasteG: 0, rate: 0, level: 'none', n: 0 }
+    return {
+      ...metrics, ratio: 0, rate: 0, baseRate: 0, level: 'none', n: 0,
+      predictedWasteG: 0, plateLeftoverG: 0, tapauSavedG: 0, tapau: false,
+    }
   }
   const ratio = metrics.effectiveDishes / partySize
-  const { rate, n, band, bucket } = lookupWasteRate(stats, partySize, ratio)
-  const predictedWasteG = Math.round(metrics.totalWeightG * rate)
+  const { rate: historyRate, n, band, bucket } = lookupWasteRate(stats, partySize, ratio)
+
+  // Dish-mix adjustment, capped at the buffet-waste ceiling used everywhere
+  const rate = Math.min(historyRate * metrics.mix, 0.55)
+  const plateLeftoverG = Math.round(metrics.totalWeightG * rate)
+
+  // Tapau credit: packed leftovers leave as meals, not bin weight
+  const tapauSavedG = opts.tapau ? Math.round(plateLeftoverG * TAPAU_RECOVERY) : 0
+  const predictedWasteG = plateLeftoverG - tapauSavedG
+  const effectiveRate = metrics.totalWeightG ? predictedWasteG / metrics.totalWeightG : 0
 
   // Traffic light: thresholds sit on the historical curve — <15% is what
   // right-sized tables achieve, >28% is solidly in over-ordering territory.
-  const level = rate < 0.15 ? 'low' : rate < 0.28 ? 'medium' : 'high'
+  const level = effectiveRate < 0.15 ? 'low' : effectiveRate < 0.28 ? 'medium' : 'high'
 
-  return { ...metrics, ratio, rate, predictedWasteG, level, n, band, bucket }
+  return {
+    ...metrics, ratio, rate: effectiveRate, baseRate: historyRate,
+    predictedWasteG, plateLeftoverG, tapauSavedG, tapau: !!opts.tapau,
+    level, n, band, bucket,
+  }
 }
 
 /**
@@ -105,7 +139,11 @@ export function recommendedDishCount(partySize) {
 }
 
 /**
- * Live Order Checker — a gentle nudge when the ratio drifts, never a block.
+ * Live Order Checker — a gentle nudge when the order drifts, never a block.
+ * Two independent rules, highest severity wins:
+ *   (a) ratio rule — too many dishes for the party size
+ *   (b) pairing rule — two+ bulk-carb dishes for a small table is the classic
+ *       over-order (both chronically come back half-finished)
  * Returns null when the order looks right-sized.
  */
 export function nudgeFor(stats, partySize, order) {
@@ -122,6 +160,16 @@ export function nudgeFor(stats, partySize, order) {
       text: `That's ${effectiveDishes.toFixed(1).replace(/\.0$/, '')} dishes for ${partySize} ${partySize === 1 ? 'person' : 'people'}. Most tables your size finish about ${rec.ideal}${evidence}. Half portions are a great way to keep the variety.`,
     }
   }
+
+  const carbs = order.filter((l) => MENU_BY_ID[l.dishId].category === 'rice/noodle')
+  if (carbs.length >= 2 && partySize <= 4) {
+    const names = [...new Set(carbs.map((l) => MENU_BY_ID[l.dishId].name))].join(' + ')
+    return {
+      tone: 'medium',
+      text: `${names} is two rice/noodle dishes for ${partySize} — carb dishes are the ones most often left unfinished. A Half portion of one keeps the variety.`,
+    }
+  }
+
   if (ratio > 1.25) {
     return {
       tone: 'medium',
@@ -129,4 +177,23 @@ export function nudgeFor(stats, partySize, order) {
     }
   }
   return null
+}
+
+/**
+ * Green-receipt math: what did this table save by right-sizing?
+ * Baseline = the same order with every portionable line at Regular.
+ * (If nothing was downsized, savings are zero — we never invent credit.)
+ */
+export function rightSizingSavings(stats, partySize, order, opts = {}) {
+  const baselineOrder = order.map((l) => ({
+    ...l,
+    portion: MENU_BY_ID[l.dishId].portionable && l.portion === 'half' ? 'regular' : l.portion,
+  }))
+  const actual = predictWaste(stats, partySize, order, opts)
+  const baseline = predictWaste(stats, partySize, baselineOrder, opts)
+  return {
+    gramsSaved: Math.max(0, baseline.predictedWasteG - actual.predictedWasteG),
+    moneySaved: Math.max(0, baseline.totalPrice - actual.totalPrice),
+    tapauSavedG: actual.tapauSavedG,
+  }
 }

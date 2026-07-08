@@ -3,7 +3,9 @@ import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, ReferenceLine, Legend, LabelList,
 } from 'recharts'
-import { MENU, MENU_BY_ID } from '../data/seedData.js'
+import {
+  MENU, MENU_BY_ID, PEER_BENCHMARKS, CO2E_PER_KG_WASTE, CO2E_PER_CAR_KM,
+} from '../data/seedData.js'
 import { Card, SectionLabel, OnboardingHint, fmtG } from './ui.jsx'
 
 /* Chart chrome per the dataviz guidance: recessive grid, muted axis ink,
@@ -18,6 +20,7 @@ const axisProps = { tick: { fill: INK_MUTED, fontSize: 12 }, axisLine: { stroke:
 const SGD_PER_KG =
   MENU.reduce((s, d) => s + d.price, 0) / (MENU.reduce((s, d) => s + d.portionWeightG, 0) / 1000)
 const MEAL_G = 400 // one meal's worth of food ≈ 400 g
+const SUBSCRIPTION_SGD = 99 // illustrative MakanSense price point, per outlet/month
 
 export default function OperatorView({ visits }) {
   const m = useMemo(() => computeDashboard(visits), [visits])
@@ -46,7 +49,7 @@ export default function OperatorView({ visits }) {
         {/* Waste trend */}
         <Card className="p-5">
           <SectionLabel>Waste trend</SectionLabel>
-          <h3 className="mt-1 font-bold">Share of food wasted, by week</h3>
+          <h3 className="font-display mt-1 text-lg font-semibold">Share of food wasted, by week</h3>
           <p className="mt-0.5 text-xs text-stone-500">
             The pilot began week 7 — nudges + portion choices pull the rate down.
           </p>
@@ -72,7 +75,7 @@ export default function OperatorView({ visits }) {
         {/* Waste by party size */}
         <Card className="p-5">
           <SectionLabel>Who over-orders?</SectionLabel>
-          <h3 className="mt-1 font-bold">Average waste rate by party size</h3>
+          <h3 className="font-display mt-1 text-lg font-semibold">Average waste rate by party size</h3>
           <p className="mt-0.5 text-xs text-stone-500">
             Mid-size groups (3–5) over-order the most — exactly where nudges pay off.
           </p>
@@ -93,10 +96,70 @@ export default function OperatorView({ visits }) {
         </Card>
       </div>
 
+      {/* The business case row */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* ROI */}
+        <Card className="border-brand-200 bg-brand-50/40 p-5">
+          <SectionLabel>Return on investment</SectionLabel>
+          <h3 className="font-display mt-1 text-lg font-semibold">Pays for itself in {m.paybackDays} days</h3>
+          <div className="mt-4 space-y-2.5 text-sm">
+            <div className="flex justify-between text-stone-600">
+              <span>MakanSense subscription</span>
+              <span className="font-semibold tabular-nums">S${SUBSCRIPTION_SGD}/mo</span>
+            </div>
+            <div className="flex justify-between text-stone-600">
+              <span>Modelled savings (4 wks)</span>
+              <span className="font-semibold tabular-nums text-brand-700">S${Math.round(m.costSaved)}</span>
+            </div>
+            <div className="h-2.5 overflow-hidden rounded-full bg-stone-200/70" aria-hidden>
+              <div className="meter-fill h-full rounded-full bg-brand-600" style={{ width: `${Math.min((m.costSaved / SUBSCRIPTION_SGD) * 100, 100) / 4}%` }} />
+            </div>
+            <p className="text-xs text-stone-500">
+              ≈ <strong className="text-brand-700">{(m.costSaved / SUBSCRIPTION_SGD).toFixed(1)}×</strong> return
+              per month at this outlet's volume — before counting reduced disposal fees.
+            </p>
+          </div>
+        </Card>
+
+        {/* Peer benchmark */}
+        <Card className="p-5">
+          <SectionLabel>Peer benchmark</SectionLabel>
+          <h3 className="font-display mt-1 text-lg font-semibold">You vs. similar restaurants</h3>
+          <div className="mt-4 space-y-3">
+            <BenchmarkBar name="You (this outlet)" rate={m.recentRate} you />
+            {PEER_BENCHMARKS.map((p) => (
+              <BenchmarkBar key={p.name} name={p.name} rate={p.rate} />
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-stone-400">
+            Peer rates are simulated reference points; every connected outlet sharpens the benchmark —
+            that's the network effect.
+          </p>
+        </Card>
+
+        {/* CO2e + regulation */}
+        <Card className="p-5">
+          <SectionLabel>Sustainability & compliance</SectionLabel>
+          <h3 className="font-display mt-1 text-lg font-semibold">
+            {m.co2eSavedKg.toFixed(0)} kg CO₂e avoided
+          </h3>
+          <p className="mt-2 text-sm text-stone-600">
+            Waste avoided in the last 4 weeks ≈ <strong>{m.avoidedKg.toFixed(1)} kg</strong> of food
+            — about <strong>{Math.round(m.carKmEquiv)} km</strong> of car travel in emissions terms
+            (at ~{CO2E_PER_KG_WASTE} kg CO₂e per kg of food waste).
+          </p>
+          <p className="mt-3 rounded-xl bg-amber-50 px-3.5 py-2.5 text-xs leading-relaxed text-amber-900">
+            <strong>Why now:</strong> under Singapore's Resource Sustainability Act, large commercial
+            food-waste generators must segregate and report food waste — MakanSense produces the
+            measurement trail as a by-product.
+          </p>
+        </Card>
+      </div>
+
       {/* Learning loop — the moat, made visual */}
       <Card className="p-6">
         <SectionLabel>The learning loop</SectionLabel>
-        <h3 className="mt-1 font-bold">Every table makes the next recommendation better</h3>
+        <h3 className="font-display mt-1 text-lg font-semibold">Every table makes the next recommendation better</h3>
         <div className="mt-5 flex flex-col items-stretch gap-2 md:flex-row md:items-center">
           <LoopNode icon="📥" title="Data in" text="Party size + dishes + measured waste per service" />
           <LoopArrow />
@@ -113,54 +176,42 @@ export default function OperatorView({ visits }) {
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
-        {/* Live visit feed */}
+        {/* Dish waste leaderboard */}
         <Card className="p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <SectionLabel>Live table feed</SectionLabel>
-              <h3 className="mt-1 font-bold">Most recent visits</h3>
-            </div>
-            <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
-              {visits.length} visits on record
-            </span>
-          </div>
-          <ul className="mt-4 divide-y divide-stone-100">
-            {m.feed.map((v) => {
-              const rate = v.wastedWeightG / v.totalFoodWeightG
-              const tone = rate < 0.15 ? 'text-status-good' : rate < 0.28 ? 'text-status-warn' : 'text-status-high'
-              return (
-                <li key={v.id} className={`flex items-center justify-between gap-3 py-2.5 text-sm ${v.source === 'live' ? 'animate-pop' : ''}`}>
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    {v.source === 'live' && (
-                      <span className="rounded-full bg-brand-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                        New
-                      </span>
-                    )}
-                    <span className="font-semibold whitespace-nowrap">Table of {v.partySize}</span>
-                    <span className="truncate text-stone-400" title={v.dishIds.map((id) => MENU_BY_ID[id].name).join(', ')}>
-                      {v.dishIds.map((id) => MENU_BY_ID[id].emoji).join(' ')}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3 whitespace-nowrap">
-                    <span className="text-stone-400">{v.date}</span>
-                    <span className={`font-semibold ${tone}`}>
-                      {fmtG(v.wastedWeightG)} · {Math.round(rate * 100)}%
-                    </span>
-                  </div>
-                </li>
-              )
-            })}
+          <SectionLabel>Menu engineering</SectionLabel>
+          <h3 className="font-display mt-1 text-lg font-semibold">Which dishes come back unfinished?</h3>
+          <p className="mt-0.5 text-xs text-stone-500">
+            Waste attributed across each visit's dishes by weight and finish history.
+          </p>
+          <ul className="mt-4 space-y-3">
+            {m.dishLeaderboard.map((d) => (
+              <li key={d.id}>
+                <div className="flex items-baseline justify-between gap-3 text-sm">
+                  <span className="font-semibold">{MENU_BY_ID[d.id].emoji} {MENU_BY_ID[d.id].name}</span>
+                  <span className="whitespace-nowrap tabular-nums text-stone-500">
+                    {Math.round(d.rate * 100)}% left · {d.wasteKg.toFixed(1)} kg
+                  </span>
+                </div>
+                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-stone-100" aria-hidden>
+                  <div
+                    className="meter-fill h-full rounded-full"
+                    style={{ width: `${Math.min((d.rate / 0.4) * 100, 100)}%`, background: d.rate >= 0.25 ? 'var(--color-status-warn)' : SERIES_1 }}
+                  />
+                </div>
+                <p className="mt-1 text-xs text-stone-400">{d.action}</p>
+              </li>
+            ))}
           </ul>
         </Card>
 
         {/* Honest measurement card */}
         <Card className="h-fit border-amber-200/70 bg-amber-50/40 p-5">
           <SectionLabel>How waste is measured</SectionLabel>
-          <h3 className="mt-1 font-bold">Per service, not per plate</h3>
+          <h3 className="font-display mt-1 text-lg font-semibold">Per service, not per plate</h3>
           <p className="mt-2 text-sm leading-relaxed text-stone-600">
             In a real deployment, aggregate waste is <strong>weighed per service</strong> at the
             clearing station (or via smart-bin sensors) — <strong>not</strong> per individual plate.
-            Table-level figures are attributed estimates, and every number in this demo is
+            Table- and dish-level figures are attributed estimates, and every number in this demo is
             simulated data calibrated to published research, not a measured result.
           </p>
           <ul className="mt-3 space-y-1.5 text-xs text-stone-500">
@@ -170,6 +221,46 @@ export default function OperatorView({ visits }) {
           </ul>
         </Card>
       </div>
+
+      {/* Live visit feed */}
+      <Card className="p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <SectionLabel>Live table feed</SectionLabel>
+            <h3 className="font-display mt-1 text-lg font-semibold">Most recent visits</h3>
+          </div>
+          <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
+            {visits.length} visits on record
+          </span>
+        </div>
+        <ul className="mt-4 divide-y divide-stone-100">
+          {m.feed.map((v) => {
+            const rate = v.wastedWeightG / v.totalFoodWeightG
+            const tone = rate < 0.15 ? 'text-status-good' : rate < 0.28 ? 'text-status-warn' : 'text-status-high'
+            return (
+              <li key={v.id} className={`flex items-center justify-between gap-3 py-2.5 text-sm ${v.source === 'live' ? 'animate-pop' : ''}`}>
+                <div className="flex min-w-0 items-center gap-2.5">
+                  {v.source === 'live' && (
+                    <span className="rounded-full bg-brand-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                      New
+                    </span>
+                  )}
+                  <span className="font-semibold whitespace-nowrap">Table of {v.partySize}</span>
+                  <span className="truncate text-stone-400" title={v.dishIds.map((id) => MENU_BY_ID[id].name).join(', ')}>
+                    {v.dishIds.map((id) => MENU_BY_ID[id].emoji).join(' ')}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 whitespace-nowrap">
+                  <span className="text-stone-400">{v.date}</span>
+                  <span className={`font-semibold tabular-nums ${tone}`}>
+                    {fmtG(v.wastedWeightG)} · {Math.round(rate * 100)}%
+                  </span>
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      </Card>
     </div>
   )
 }
@@ -198,6 +289,7 @@ function computeDashboard(visits) {
   const recentWaste = recent.reduce((s, v) => s + v.wastedWeightG, 0)
   const recentRate = recentWaste / recentFood
   const avoidedKg = Math.max(0, (baselineRate - recentRate) * recentFood) / 1000
+  const costSaved = avoidedKg * SGD_PER_KG
 
   // Waste rate by party size (1–8)
   const bySize = {}
@@ -214,6 +306,40 @@ function computeDashboard(visits) {
       rate: Math.round((bySize[size].waste / bySize[size].food) * 100),
     }))
 
+  // Dish leaderboard: attribute each visit's waste across its dishes by
+  // weight × waste propensity (same rule the prediction engine uses).
+  const dishAcc = {}
+  for (const v of visits) {
+    const parts = v.dishIds.map((id) => ({
+      id,
+      w: MENU_BY_ID[id].portionWeightG,
+      share: MENU_BY_ID[id].portionWeightG * MENU_BY_ID[id].wastePropensity,
+    }))
+    const shareTotal = parts.reduce((s, p) => s + p.share, 0)
+    for (const p of parts) {
+      dishAcc[p.id] ??= { foodG: 0, wasteG: 0 }
+      dishAcc[p.id].foodG += p.w
+      dishAcc[p.id].wasteG += (v.wastedWeightG * p.share) / shareTotal
+    }
+  }
+  const ACTIONS = {
+    'rice/noodle': 'Consider a smaller default portion — most of this comes back as bulk carbs.',
+    soup: 'Offer a small-pot option for tables under 4.',
+    vegetable: 'Batch smaller during quiet services; dressed veg doesn\'t keep.',
+    meat: 'Holding steady — portion size looks right.',
+    seafood: 'Premium protein gets finished — a good upsell candidate.',
+    tofu: 'Portion size looks right for most tables.',
+  }
+  const dishLeaderboard = Object.entries(dishAcc)
+    .map(([id, a]) => ({
+      id,
+      rate: a.wasteG / a.foodG,
+      wasteKg: a.wasteG / 1000,
+      action: ACTIONS[MENU_BY_ID[id].category],
+    }))
+    .sort((a, b) => b.rate - a.rate)
+    .slice(0, 6)
+
   return {
     weekly,
     byPartySize,
@@ -222,8 +348,13 @@ function computeDashboard(visits) {
     recentWasteKg: recentWaste / 1000,
     recentVisits: recent.length,
     reductionPct: ((baselineRate - recentRate) / baselineRate) * 100,
-    costSaved: avoidedKg * SGD_PER_KG,
+    costSaved,
+    avoidedKg,
     mealsSaved: (avoidedKg * 1000) / MEAL_G,
+    paybackDays: Math.max(1, Math.round(SUBSCRIPTION_SGD / (costSaved / 28))),
+    co2eSavedKg: avoidedKg * CO2E_PER_KG_WASTE,
+    carKmEquiv: (avoidedKg * CO2E_PER_KG_WASTE) / CO2E_PER_CAR_KM,
+    dishLeaderboard,
     feed: [...visits].reverse().slice(0, 9),
   }
 }
@@ -232,11 +363,30 @@ function StatTile({ label, value, sub, accent }) {
   return (
     <Card className={`p-5 ${accent ? 'border-brand-200 bg-brand-50/50' : ''}`}>
       <p className="text-xs font-semibold uppercase tracking-widest text-stone-500">{label}</p>
-      <p className={`mt-2 text-4xl font-bold tracking-tight ${accent ? 'text-brand-700' : 'text-stone-900'}`}>
+      <p className={`font-display mt-2 text-4xl font-semibold tracking-tight ${accent ? 'text-brand-700' : 'text-stone-900'}`}>
         {value}
       </p>
       <p className="mt-1 text-xs text-stone-500">{sub}</p>
     </Card>
+  )
+}
+
+function BenchmarkBar({ name, rate, you }) {
+  return (
+    <div>
+      <div className="flex items-baseline justify-between text-xs">
+        <span className={you ? 'font-bold text-brand-800' : 'text-stone-500'}>{name}</span>
+        <span className={`tabular-nums font-semibold ${you ? 'text-brand-800' : 'text-stone-500'}`}>
+          {Math.round(rate * 100)}%
+        </span>
+      </div>
+      <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-stone-100" aria-hidden>
+        <div
+          className="meter-fill h-full rounded-full"
+          style={{ width: `${(rate / 0.45) * 100}%`, background: you ? SERIES_1 : '#d6d3cd' }}
+        />
+      </div>
+    </div>
   )
 }
 
@@ -258,7 +408,7 @@ function ChartTip({ active, payload, label, unit }) {
 function LoopNode({ icon, title, text, highlight }) {
   return (
     <div className={`flex-1 rounded-2xl border p-4 text-center ${
-      highlight ? 'border-brand-300 bg-brand-50' : 'border-stone-150 border-stone-200 bg-stone-50/60'
+      highlight ? 'border-brand-300 bg-brand-50' : 'border-stone-200 bg-stone-50/60'
     }`}>
       <div className="text-2xl" aria-hidden>{icon}</div>
       <p className="mt-1 text-sm font-bold">{title}</p>
