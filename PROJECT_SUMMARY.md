@@ -1,4 +1,4 @@
-# MakanSense — Project Summary
+# Mottainai — Project Summary
 
 *As of 8 July 2026*
 
@@ -12,9 +12,14 @@
 
 ## 1. The idea
 
-MakanSense is a food-waste-reduction ordering system for shared / family-style
+The name: **mottainai (もったいない)** is the Japanese concept of regret over
+waste — literally "what a waste." Popularised globally as an environmental
+rallying cry (Wangari Maathai adopted it for the UN's Mottainai Campaign),
+it captures the product's mission in one word.
+
+Mottainai is a food-waste-reduction ordering system for shared / family-style
 restaurants (zi char). Tables routinely over-order — "one more dish for the
-table" — and the surplus goes to the bin. MakanSense sits inside the
+table" — and the surplus goes to the bin. Mottainai sits inside the
 restaurant's QR-ordering flow and uses the restaurant's **own historical waste
 data** to predict, at order time, how much of the food will go uneaten — then
 gives the table **one-tap ways to act on it** (smaller portions, fewer dishes,
@@ -46,7 +51,7 @@ reference points so it is defensible on stage:
 ### Diner View (the QR-ordering experience)
 
 Framed as the ordering flow of a fictional restaurant — **"Golden Wok Zi Char
-金锅小炒 · Table 12 · Powered by MakanSense."**
+金锅小炒 · Table 12 · Powered by Mottainai."**
 
 1. **Party-size entry** (1–8+) with a "tables your size finish ~N dishes" hint.
 2. **Photo menu** — 12 zi char dishes with real photography (Wikimedia

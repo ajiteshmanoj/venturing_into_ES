@@ -20,7 +20,7 @@ const axisProps = { tick: { fill: INK_MUTED, fontSize: 12 }, axisLine: { stroke:
 const SGD_PER_KG =
   MENU.reduce((s, d) => s + d.price, 0) / (MENU.reduce((s, d) => s + d.portionWeightG, 0) / 1000)
 const MEAL_G = 400 // one meal's worth of food ≈ 400 g
-const SUBSCRIPTION_SGD = 99 // illustrative MakanSense price point, per outlet/month
+const SUBSCRIPTION_SGD = 99 // illustrative Mottainai price point, per outlet/month
 
 export default function OperatorView({ visits }) {
   const m = useMemo(() => computeDashboard(visits), [visits])
@@ -104,7 +104,7 @@ export default function OperatorView({ visits }) {
           <h3 className="font-display mt-1 text-lg font-semibold">Pays for itself in {m.paybackDays} days</h3>
           <div className="mt-4 space-y-2.5 text-sm">
             <div className="flex justify-between text-stone-600">
-              <span>MakanSense subscription</span>
+              <span>Mottainai subscription</span>
               <span className="font-semibold tabular-nums">S${SUBSCRIPTION_SGD}/mo</span>
             </div>
             <div className="flex justify-between text-stone-600">
@@ -150,7 +150,7 @@ export default function OperatorView({ visits }) {
           </p>
           <p className="mt-3 rounded-xl bg-amber-50 px-3.5 py-2.5 text-xs leading-relaxed text-amber-900">
             <strong>Why now:</strong> under Singapore's Resource Sustainability Act, large commercial
-            food-waste generators must segregate and report food waste — MakanSense produces the
+            food-waste generators must segregate and report food waste — Mottainai produces the
             measurement trail as a by-product.
           </p>
         </Card>

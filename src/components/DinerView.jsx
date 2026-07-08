@@ -10,7 +10,7 @@ import {
 import { Card, SectionLabel, TrafficLight, OnboardingHint, LEVELS, fmtG, fmtSGD } from './ui.jsx'
 
 /* The fictional restaurant this deployment is "installed" at — the diner flow
- * is framed as its QR-ordering experience, powered by MakanSense. */
+ * is framed as its QR-ordering experience, powered by Mottainai. */
 const RESTAURANT = { name: 'Golden Wok Zi Char', nameZh: '金锅小炒', table: 12 }
 
 let lineKey = 0
@@ -174,7 +174,7 @@ function RestaurantStrip() {
           Table {RESTAURANT.table}
         </span>
         <span className="hidden text-[11px] uppercase tracking-widest text-stone-500 sm:block">
-          Powered by MakanSense
+          Powered by Mottainai
         </span>
       </div>
     </div>
@@ -853,7 +853,7 @@ function TableCheckout({ confirmed, updateVisit, startOver, goToOperator }) {
             {/* Points split across the party's accounts */}
             <div className="mt-4 rounded-xl bg-white p-4 shadow-card">
               <div className="flex items-baseline justify-between">
-                <p className="text-sm font-bold text-stone-800">MakanSense Rewards</p>
+                <p className="text-sm font-bold text-stone-800">Mottainai Rewards</p>
                 <p className="font-display text-lg font-semibold text-brand-700">
                   +{points.total} pts
                 </p>

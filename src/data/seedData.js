@@ -157,7 +157,7 @@ export function mixFactor(dishWeights) {
 // ---------------------------------------------------------------------------
 // ~200 past table visits over 12 weeks.
 // Weeks 1–6 = pre-pilot baseline (tables over-order freely).
-// Weeks 7–12 = MakanSense pilot: ordering behaviour gradually right-sizes,
+// Weeks 7–12 = Mottainai pilot: ordering behaviour gradually right-sizes,
 // so dishes-per-person drifts toward ~1 and waste trends down — matching the
 // 12–34%+ reductions reported for portion interventions.
 // ---------------------------------------------------------------------------

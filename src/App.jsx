@@ -5,8 +5,8 @@ import DinerView from './components/DinerView.jsx'
 import OperatorView from './components/OperatorView.jsx'
 
 /*
- * MakanSense — right-size every table.
- * ("Makan" = to eat, in Singlish.)
+ * Mottainai — right-size every table.
+ * (もったいない — the Japanese concept of regret over waste: "what a waste".)
  *
  * All state lives in React memory — no backend, no localStorage. Confirmed
  * diner orders are appended to `visits`, and because the operator dashboard
@@ -14,7 +14,7 @@ import OperatorView from './components/OperatorView.jsx'
  * order visibly updates the whole system: the closed loop, live on stage.
  *
  * The diner flow is framed as the QR-ordering experience of a fictional
- * zi char restaurant ("Golden Wok Zi Char", Table 12) powered by MakanSense.
+ * zi char restaurant ("Golden Wok Zi Char", Table 12) powered by Mottainai.
  */
 export default function App() {
   const [view, setView] = useState('diner')
@@ -47,9 +47,11 @@ export default function App() {
               🥢
             </div>
             <div>
-              <h1 className="font-display text-xl font-semibold tracking-tight">MakanSense</h1>
+              <h1 className="font-display text-xl font-semibold tracking-tight">
+                Mottainai <span className="ml-1 text-sm font-normal text-stone-400">もったいない</span>
+              </h1>
               <p className="hidden text-[11px] tracking-wide text-stone-500 sm:block">
-                RIGHT-SIZE EVERY TABLE · WASTE LESS, SPEND LESS
+                "WHAT A WASTE" · RIGHT-SIZE EVERY TABLE, WASTE LESS, SPEND LESS
               </p>
             </div>
           </div>

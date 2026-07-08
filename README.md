@@ -1,6 +1,9 @@
-# MakanSense 🥢
+# Mottainai 🥢
 
 **Right-size every table. Waste less, spend less.**
+
+*Mottainai (もったいない) is the Japanese concept of regret over waste —
+"what a waste." The name is the mission.*
 
 Interactive Demo Day prototype of a food-waste-reduction ordering system for
 shared / family-style restaurants (zi char). Two connected views in one
