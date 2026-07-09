@@ -105,11 +105,11 @@ export default function OperatorView({ visits }) {
           <div className="mt-4 space-y-2.5 text-sm">
             <div className="flex justify-between text-stone-600">
               <span>Mottainai subscription</span>
-              <span className="font-semibold tabular-nums">S${SUBSCRIPTION_SGD}/mo</span>
+              <span className="font-data text-[13px] font-semibold">S${SUBSCRIPTION_SGD}/mo</span>
             </div>
             <div className="flex justify-between text-stone-600">
               <span>Modelled savings (4 wks)</span>
-              <span className="font-semibold tabular-nums text-brand-700">S${Math.round(m.costSaved)}</span>
+              <span className="font-data text-[13px] font-semibold text-brand-700">S${Math.round(m.costSaved)}</span>
             </div>
             <div className="h-2.5 overflow-hidden rounded-full bg-stone-200/70" aria-hidden>
               <div className="meter-fill h-full rounded-full bg-brand-600" style={{ width: `${Math.min((m.costSaved / SUBSCRIPTION_SGD) * 100, 100) / 4}%` }} />
@@ -188,7 +188,7 @@ export default function OperatorView({ visits }) {
               <li key={d.id}>
                 <div className="flex items-baseline justify-between gap-3 text-sm">
                   <span className="font-semibold">{MENU_BY_ID[d.id].emoji} {MENU_BY_ID[d.id].name}</span>
-                  <span className="whitespace-nowrap tabular-nums text-stone-500">
+                  <span className="whitespace-nowrap font-data text-[12px] text-stone-500">
                     {Math.round(d.rate * 100)}% left · {d.wasteKg.toFixed(1)} kg
                   </span>
                 </div>
@@ -260,7 +260,7 @@ export default function OperatorView({ visits }) {
                 </div>
                 <div className="flex items-center gap-3 whitespace-nowrap">
                   <span className="text-stone-400">{v.date}</span>
-                  <span className={`font-semibold tabular-nums ${tone}`}>
+                  <span className={`font-data text-[13px] font-semibold ${tone}`}>
                     {fmtG(v.wastedWeightG)} · {Math.round(rate * 100)}%
                   </span>
                 </div>
@@ -369,12 +369,12 @@ function computeDashboard(visits) {
 
 function StatTile({ label, value, sub, accent }) {
   return (
-    <Card className={`p-5 ${accent ? 'border-brand-200 bg-brand-50/50' : ''}`}>
-      <p className="text-xs font-semibold uppercase tracking-widest text-stone-500">{label}</p>
-      <p className={`font-display mt-2 text-4xl font-semibold tracking-tight ${accent ? 'text-brand-700' : 'text-stone-900'}`}>
+    <Card className={`p-5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lift ${accent ? 'border-brand-200 bg-brand-50/50' : ''}`}>
+      <p className="kicker !text-[10px]">{label}</p>
+      <p className={`font-display mt-2.5 text-[40px] font-semibold leading-none tracking-tight ${accent ? 'text-brand-700' : 'text-stone-900'}`}>
         {value}
       </p>
-      <p className="mt-1 text-xs text-stone-500">{sub}</p>
+      <p className="mt-2 text-xs text-stone-500">{sub}</p>
     </Card>
   )
 }
@@ -384,7 +384,7 @@ function BenchmarkBar({ name, rate, you }) {
     <div>
       <div className="flex items-baseline justify-between text-xs">
         <span className={you ? 'font-bold text-brand-800' : 'text-stone-500'}>{name}</span>
-        <span className={`tabular-nums font-semibold ${you ? 'text-brand-800' : 'text-stone-500'}`}>
+        <span className={`font-data text-[12px] font-semibold ${you ? 'text-brand-800' : 'text-stone-500'}`}>
           {Math.round(rate * 100)}%
         </span>
       </div>
