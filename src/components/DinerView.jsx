@@ -1,6 +1,10 @@
 import { useMemo, useState } from 'react'
 import {
-  MENU, MENU_BY_ID, PORTIONS, SERVICE_CHARGE, GST,
+  BarChart, Bar, Cell, LabelList, ReferenceLine, ResponsiveContainer,
+  Tooltip, XAxis, YAxis,
+} from 'recharts'
+import {
+  MENU, MENU_BY_ID, PORTIONS, SERVICE_CHARGE, GST, DINER_PAST_VISITS,
   dishPhoto, finishChip,
 } from '../data/seedData.js'
 import {
@@ -1261,6 +1265,12 @@ function TableCheckout({ confirmed, updateVisit, startOver, goToOperator }) {
                   ✓ Measured result saved — the model just re-learned from reality, and this visit
                   is now marked verified on the operator feed.
                 </p>
+
+                {/* The diner's own trend — the operator has one, so should you */}
+                <PersonalWasteTrend
+                  measuredG={outcome.measuredG}
+                  partySize={visit.partySize}
+                />
                 <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:justify-center">
                   <button
                     onClick={goToOperator}
@@ -1280,6 +1290,102 @@ function TableCheckout({ confirmed, updateVisit, startOver, goToOperator }) {
           </div>
         )}
       </Card>
+    </div>
+  )
+}
+
+/*
+ * YOUR WASTE TREND — the diner's personal history, revealed at check-out.
+ * Same closed-loop story as the operator's trend chart, but for one account:
+ * past check-outs (per-person measured leftovers) plus today's result.
+ * Single series, one hue — today is emphasised by full-strength teal and a
+ * direct label; past visits sit at 35% strength. Chart chrome follows the
+ * operator view (recessive axes, muted ink, thin rounded bars).
+ */
+const TREND_TEAL = '#0d9488'
+const TREND_INK_MUTED = '#8a8781'
+
+function PersonalWasteTrend({ measuredG, partySize }) {
+  const todayG = Math.round(measuredG / partySize)
+  const data = [
+    ...DINER_PAST_VISITS.map((v) => ({ ...v, today: false })),
+    { label: 'Today', wastePerPersonG: todayG, today: true },
+  ]
+  const first = DINER_PAST_VISITS[0].wastePerPersonG
+  const pastAvg = Math.round(
+    DINER_PAST_VISITS.reduce((s, v) => s + v.wastePerPersonG, 0) / DINER_PAST_VISITS.length,
+  )
+  const bestYet = todayG <= Math.min(...DINER_PAST_VISITS.map((v) => v.wastePerPersonG))
+  const deltaPct = Math.round((1 - todayG / first) * 100)
+
+  return (
+    <div className="mt-4 rounded-xl bg-white p-4 shadow-card">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-sm font-bold text-stone-800">📉 Your waste trend</p>
+        <p className="text-[11px] text-stone-400">leftovers per person, your check-outs</p>
+      </div>
+      <div className="mt-2 h-36">
+        <ResponsiveContainer>
+          <BarChart data={data} margin={{ top: 18, right: 8, left: 8, bottom: 0 }}>
+            <XAxis
+              dataKey="label"
+              interval={0}
+              tick={{ fill: TREND_INK_MUTED, fontSize: 10.5 }}
+              axisLine={{ stroke: '#c9c6bd' }}
+              tickLine={false}
+            />
+            <YAxis hide domain={[0, (dataMax) => Math.max(dataMax + 20, first + 20)]} />
+            <Tooltip content={<TrendTip />} cursor={{ fill: 'rgba(13,148,136,0.06)' }} />
+            <ReferenceLine
+              y={pastAvg}
+              stroke={TREND_INK_MUTED}
+              strokeDasharray="4 4"
+              label={{ value: 'your average', position: 'insideTopLeft', fill: TREND_INK_MUTED, fontSize: 10 }}
+            />
+            <Bar dataKey="wastePerPersonG" name="Leftovers per person" radius={[4, 4, 0, 0]} maxBarSize={26}>
+              {data.map((d) => (
+                <Cell key={d.label} fill={TREND_TEAL} fillOpacity={d.today ? 1 : 0.35} />
+              ))}
+              <LabelList
+                content={({ x, y, width, index, value }) =>
+                  index === data.length - 1 ? (
+                    <text
+                      x={x + width / 2}
+                      y={y - 6}
+                      textAnchor="middle"
+                      fontSize={11}
+                      fontWeight={700}
+                      fill={TREND_TEAL}
+                    >
+                      {value} g
+                    </text>
+                  ) : null
+                }
+              />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <p className="mt-2 text-xs leading-relaxed text-stone-500">
+        {bestYet
+          ? `Your best visit yet — ${todayG} g each, down from ${first} g on your first Mottainai check-out.`
+          : deltaPct > 0
+            ? `${todayG} g each today — ${deltaPct}% less than your first Mottainai check-out.`
+            : `${todayG} g each today — above your recent form. Half portions or a smart-serve hold make the next one easy.`}
+      </p>
+    </div>
+  )
+}
+
+function TrendTip({ active, payload, label }) {
+  if (!active || !payload?.length) return null
+  return (
+    <div className="rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs shadow-lift">
+      <p className="font-bold text-stone-700">{label}</p>
+      <p className="mt-0.5 flex items-center gap-1.5 text-stone-600">
+        <span className="inline-block h-2 w-2 rounded-full" style={{ background: TREND_TEAL }} aria-hidden />
+        Leftovers per person: <strong>{payload[0].value} g</strong>
+      </p>
     </div>
   )
 }

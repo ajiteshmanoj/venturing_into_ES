@@ -100,6 +100,10 @@ Framed as the ordering flow of a fictional restaurant — **"Golden Wok Zi Char
      for every table), split across every party member's account;
    - government-programme card modelled on Healthy 365 / CDC vouchers,
      labelled an illustrative fictional partnership;
+   - **📉 "Your waste trend"** — the diner's personal history (per-person
+     measured leftovers across past check-outs, simulated) with today's
+     result appended and highlighted, mirroring the operator's trend chart
+     at the individual-account level;
    - the measured result **overwrites the prediction in shared history**, so
      the model re-learns from reality.
 

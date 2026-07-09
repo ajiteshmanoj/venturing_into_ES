@@ -321,6 +321,23 @@ export function computeWasteStats(visits) {
 }
 
 // ---------------------------------------------------------------------------
+// THE DEMO DINER'S PERSONAL HISTORY — simulated, like everything else.
+// Measured leftovers per person (g) from this account's past check-outs,
+// shown as "your waste trend" after a table check-out. Trends downward as
+// the diner learns to right-size (one organic-looking bump in May), sized
+// to the same envelope as the pilot improvement (~30–66% reductions).
+// ---------------------------------------------------------------------------
+export const DINER_PAST_VISITS = [
+  { label: '14 Mar', wastePerPersonG: 128 },
+  { label: '2 Apr',  wastePerPersonG: 112 },
+  { label: '19 Apr', wastePerPersonG: 87 },
+  { label: '8 May',  wastePerPersonG: 94 },
+  { label: '24 May', wastePerPersonG: 61 },
+  { label: '11 Jun', wastePerPersonG: 46 },
+  { label: '28 Jun', wastePerPersonG: 38 },
+]
+
+// ---------------------------------------------------------------------------
 // Peer benchmarks for the operator view — SIMULATED reference points, framed
 // as such in the UI. Rates are consistent with the research calibration
 // (pre-intervention shared-dining settings cluster in the high-20s–30s%).
