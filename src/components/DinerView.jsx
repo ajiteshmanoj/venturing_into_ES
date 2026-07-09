@@ -229,33 +229,35 @@ function RestaurantStrip() {
 
 function PartyPicker({ setPartySize, loadOverOrderScenario }) {
   return (
-    <div className="mx-auto max-w-2xl">
-      <OnboardingHint>
-        Welcome! This menu helps your table order <strong>just the right amount</strong> — using this
-        restaurant's own dining history. Start by telling us your party size.
-      </OnboardingHint>
-      <Card className="mt-6 p-10 text-center">
-        <SectionLabel>Step 1 of 3</SectionLabel>
-        <h2 className="font-display mt-3 text-4xl font-semibold tracking-tight">
-          How many are dining today?
+    <div className="dot-grid -mx-5 -mt-2 px-5 pb-16 pt-10 sm:pt-14">
+      <div className="mx-auto max-w-2xl text-center">
+        <p className="kicker kicker-dot">Step 1 of 3 · Your table</p>
+        <h2 className="font-display mt-5 text-[42px] font-semibold leading-[1.04] tracking-tight sm:text-[54px]">
+          How many are dining{' '}
+          <em className="italic text-brand-700">today</em>?
         </h2>
-        <div className="mx-auto mt-8 grid max-w-md grid-cols-4 gap-3">
+        <p className="mx-auto mt-5 max-w-md text-[15px] leading-relaxed text-stone-500">
+          This menu helps your table order <strong className="font-semibold text-stone-700">just the right amount</strong>,
+          using the restaurant's own dining history.
+        </p>
+
+        <div className="mx-auto mt-10 grid max-w-md grid-cols-4 gap-3">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
             <button
               key={n}
               onClick={() => setPartySize(n)}
-              className="aspect-square rounded-2xl border border-stone-200 bg-white text-2xl font-bold text-stone-700 shadow-card transition-all hover:-translate-y-0.5 hover:border-brand-400 hover:text-brand-700 hover:shadow-lift"
+              className="aspect-square rounded-2xl border border-stone-900/8 bg-card font-display text-3xl font-semibold text-stone-700 shadow-card transition-all hover:-translate-y-1 hover:border-brand-400 hover:text-brand-700 hover:shadow-lift active:translate-y-0 active:scale-[0.97]"
             >
               {n === 8 ? '8+' : n}
             </button>
           ))}
         </div>
-        <p className="mt-6 text-sm text-stone-500">
+        <p className="mt-7 text-[13px] text-stone-400">
           We'll suggest the right number of dishes as you go — you always stay in control.
         </p>
-      </Card>
-      <div className="mt-6 text-center">
-        <DemoScenarioButton onClick={loadOverOrderScenario} />
+        <div className="mt-9">
+          <DemoScenarioButton onClick={loadOverOrderScenario} />
+        </div>
       </div>
     </div>
   )
