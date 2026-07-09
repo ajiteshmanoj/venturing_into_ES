@@ -203,23 +203,23 @@ export default function DinerView({ stats, addVisit, updateVisit, goToOperator }
 /* The "you scanned the QR at your table" framing. */
 function RestaurantStrip() {
   return (
-    <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-stone-900 px-5 py-4 text-stone-100 shadow-card">
+    <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[22px] border border-stone-700/50 bg-gradient-to-br from-stone-900 via-stone-900 to-stone-800 px-5 py-4 text-stone-100 shadow-lift">
       <div className="flex items-center gap-3.5">
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-amber-400/90 text-xl" aria-hidden>
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-amber-400/90 text-xl shadow-card" aria-hidden>
           🔥
         </div>
         <div>
           <p className="font-display text-lg font-semibold leading-tight">
-            {RESTAURANT.name} <span className="ml-1 text-stone-400">{RESTAURANT.nameZh}</span>
+            {RESTAURANT.name} <span className="ml-1 font-normal text-stone-400">{RESTAURANT.nameZh}</span>
           </p>
           <p className="text-xs text-stone-400">Blk 214 Serangoon Ave 4 · Open daily 11am–10pm</p>
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <span className="rounded-full border border-stone-700 bg-stone-800 px-3.5 py-1.5 text-sm font-semibold">
-          Table {RESTAURANT.table}
+        <span className="rounded-full border border-stone-600/60 bg-stone-800/90 px-3.5 py-1.5 font-data text-[13px] font-semibold tracking-wide">
+          TABLE {RESTAURANT.table}
         </span>
-        <span className="hidden text-[11px] uppercase tracking-widest text-stone-500 sm:block">
+        <span className="hidden font-data text-[10px] uppercase tracking-[0.24em] text-stone-500 sm:block">
           Powered by Mottainai
         </span>
       </div>
@@ -801,7 +801,7 @@ function GreenReceipt({ confirmed, startOver, goToOperator, onCheckout, onChecki
                       </span>
                     )}
                   </span>
-                  <span className="tabular-nums text-stone-600">
+                  <span className="font-data text-[13px] text-stone-600">
                     {fmtSGD(dish.price * PORTIONS[line.portion].priceFactor)}
                   </span>
                 </div>
@@ -834,9 +834,9 @@ function GreenReceipt({ confirmed, startOver, goToOperator, onCheckout, onChecki
 
           {/* Bill anatomy */}
           <div className="receipt-rule mt-4 space-y-1.5 pt-3 text-sm text-stone-500">
-            <div className="flex justify-between"><span>Subtotal</span><span className="tabular-nums">{fmtSGD(prediction.totalPrice)}</span></div>
-            <div className="flex justify-between"><span>Service charge 10%</span><span className="tabular-nums">{fmtSGD(service)}</span></div>
-            <div className="flex justify-between"><span>GST 9%</span><span className="tabular-nums">{fmtSGD(gst)}</span></div>
+            <div className="flex justify-between"><span>Subtotal</span><span className="font-data text-[13px]">{fmtSGD(prediction.totalPrice)}</span></div>
+            <div className="flex justify-between"><span>Service charge 10%</span><span className="font-data text-[13px]">{fmtSGD(service)}</span></div>
+            <div className="flex justify-between"><span>GST 9%</span><span className="font-data text-[13px]">{fmtSGD(gst)}</span></div>
             <div className="flex items-baseline justify-between pt-1.5 text-base font-bold text-stone-900">
               <span>Total</span>
               <span className="font-display text-xl tabular-nums">{fmtSGD(total)}</span>
@@ -877,27 +877,27 @@ function GreenReceipt({ confirmed, startOver, goToOperator, onCheckout, onChecki
             {heldLines.length > 0 ? (
               <button
                 onClick={onCheckin}
-                className="rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-card transition-colors hover:bg-brand-700"
+                className="btn-primary rounded-full bg-brand-600 px-5 py-3 text-sm font-bold text-white hover:bg-brand-700"
               >
                 🍽 Mid-meal check-in — still hungry? →
               </button>
             ) : (
               <button
                 onClick={onCheckout}
-                className="rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-card transition-colors hover:bg-brand-700"
+                className="btn-primary rounded-full bg-brand-600 px-5 py-3 text-sm font-bold text-white hover:bg-brand-700"
               >
                 📸 Table check-out (after the meal) →
               </button>
             )}
             <button
               onClick={goToOperator}
-              className="rounded-xl border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-stone-600 transition-colors hover:border-brand-300 hover:text-brand-700"
+              className="rounded-full border border-stone-200 bg-card px-5 py-3 text-sm font-semibold text-stone-600 transition-colors hover:border-brand-300 hover:text-brand-700"
             >
               Skip to dashboard
             </button>
             <button
               onClick={startOver}
-              className="rounded-xl border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-stone-600 transition-colors hover:border-brand-300 hover:text-brand-700"
+              className="rounded-full border border-stone-200 bg-card px-5 py-3 text-sm font-semibold text-stone-600 transition-colors hover:border-brand-300 hover:text-brand-700"
             >
               New table
             </button>
@@ -1061,7 +1061,7 @@ function MidMealCheckin({ confirmed, stats, tapau, updateVisit, onContinue, goTo
               <button
                 onClick={confirmChoices}
                 disabled={!allDecided}
-                className="rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-card transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-400 disabled:shadow-none"
+                className="btn-primary rounded-full bg-brand-600 px-5 py-3 text-sm font-bold text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-400"
               >
                 Confirm round 2 →
               </button>
@@ -1095,19 +1095,19 @@ function MidMealCheckin({ confirmed, stats, tapau, updateVisit, onContinue, goTo
             <div className="mt-4 flex flex-col gap-2 sm:flex-row">
               <button
                 onClick={continueToCheckout}
-                className="rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-card transition-colors hover:bg-brand-700"
+                className="btn-primary rounded-full bg-brand-600 px-5 py-3 text-sm font-bold text-white hover:bg-brand-700"
               >
                 📸 Table check-out →
               </button>
               <button
                 onClick={goToOperator}
-                className="rounded-xl border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-stone-600 transition-colors hover:border-brand-300 hover:text-brand-700"
+                className="rounded-full border border-stone-200 bg-card px-5 py-3 text-sm font-semibold text-stone-600 transition-colors hover:border-brand-300 hover:text-brand-700"
               >
                 Skip to dashboard
               </button>
               <button
                 onClick={startOver}
-                className="rounded-xl border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-stone-600 transition-colors hover:border-brand-300 hover:text-brand-700"
+                className="rounded-full border border-stone-200 bg-card px-5 py-3 text-sm font-semibold text-stone-600 transition-colors hover:border-brand-300 hover:text-brand-700"
               >
                 New table
               </button>
@@ -1263,7 +1263,7 @@ function TableCheckout({ confirmed, updateVisit, startOver, goToOperator }) {
             {!logged ? (
               <button
                 onClick={logResult}
-                className="mt-4 w-full rounded-xl bg-brand-600 py-3 text-sm font-bold text-white shadow-card transition-colors hover:bg-brand-700"
+                className="btn-primary mt-4 w-full rounded-full bg-brand-600 py-3 text-sm font-bold text-white hover:bg-brand-700"
               >
                 Log result & collect points
               </button>
@@ -1282,13 +1282,13 @@ function TableCheckout({ confirmed, updateVisit, startOver, goToOperator }) {
                 <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:justify-center">
                   <button
                     onClick={goToOperator}
-                    className="rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-card transition-colors hover:bg-brand-700"
+                    className="btn-primary rounded-full bg-brand-600 px-5 py-3 text-sm font-bold text-white hover:bg-brand-700"
                   >
                     See it verified on the dashboard →
                   </button>
                   <button
                     onClick={startOver}
-                    className="rounded-xl border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-stone-600 transition-colors hover:border-brand-300 hover:text-brand-700"
+                    className="rounded-full border border-stone-200 bg-card px-5 py-3 text-sm font-semibold text-stone-600 transition-colors hover:border-brand-300 hover:text-brand-700"
                   >
                     Start a new table
                   </button>
