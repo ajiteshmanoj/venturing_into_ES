@@ -1,12 +1,20 @@
 @import "@fontsource-variable/inter";
 @import "@fontsource-variable/fraunces";
+@import "@fontsource-variable/jetbrains-mono";
 @import "tailwindcss";
 
 /*
  * Mottainai design tokens — calm, premium, "operating restaurant" aesthetic.
- * Fraunces (display serif) for brand/menu voice, Inter for UI.
- * Teal/sage accents over warm neutrals; chart series colors validated for
- * CVD separation + contrast on the cream surface.
+ * Fraunces (display serif) for brand/menu voice, Inter for UI, JetBrains Mono
+ * for data (prices, grams, table numbers — anything the kitchen would print).
+ * Teal/sage accents over a warm paper plane; chart series colors validated
+ * for CVD separation + contrast on the paper surface.
+ *
+ * Shadow system (three tiers, layered — never a single flat drop):
+ *   card  — resting card on the paper plane
+ *   lift  — hover / raised card
+ *   float — hero panels, floating nav
+ *   glow  — primary CTA only (brand-tinted, used sparingly)
  */
 @theme {
   /* Brand teal — primary accent */
@@ -30,9 +38,9 @@
   --color-sage-600: #6b7a49;
   --color-sage-700: #55613b;
 
-  /* Warm neutral page plane */
-  --color-cream: #faf9f6;
-  --color-card: #fffefb;
+  /* Warm paper plane — cards float on it, they don't blend into it */
+  --color-cream: #f6f3ec;
+  --color-card: #fffdf8;
 
   /* Chart series (validated): teal + amber */
   --color-chart-1: #0d9488;
@@ -45,9 +53,13 @@
 
   --font-sans: "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-display: "Fraunces Variable", Georgia, "Times New Roman", serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "SF Mono", monospace;
 
-  --shadow-card: 0 1px 2px rgba(28, 25, 23, 0.04), 0 4px 16px rgba(28, 25, 23, 0.05);
-  --shadow-lift: 0 2px 4px rgba(28, 25, 23, 0.06), 0 12px 32px rgba(28, 25, 23, 0.10);
+  --shadow-card: 0 1px 2px rgba(28, 24, 18, 0.04), 0 10px 30px -20px rgba(28, 24, 18, 0.22);
+  --shadow-lift: 0 1px 2px rgba(28, 24, 18, 0.05), 0 18px 44px -26px rgba(28, 24, 18, 0.30);
+  --shadow-float: 0 1px 2px rgba(28, 24, 18, 0.04), 0 30px 70px -30px rgba(28, 24, 18, 0.35);
+  --shadow-glow: 0 1px 2px rgba(28, 24, 18, 0.06), 0 10px 24px -10px rgba(13, 148, 136, 0.55);
+  --shadow-glow-lift: 0 1px 2px rgba(28, 24, 18, 0.06), 0 14px 34px -10px rgba(13, 148, 136, 0.65);
 }
 
 html {
@@ -58,12 +70,61 @@ body {
   font-family: var(--font-sans);
   color: #1c1917;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 /* Display voice: menu names, headings, hero numbers */
 .font-display {
   font-family: var(--font-display);
   font-variation-settings: "SOFT" 50, "WONK" 0;
+}
+
+/* Data voice: prices, grams, table numbers — what a kitchen ticket prints */
+.font-data {
+  font-family: var(--font-mono);
+  font-variation-settings: "wght" 500;
+  letter-spacing: -0.01em;
+}
+
+/* Headings shouldn't orphan a single word */
+h1, h2, h3 {
+  text-wrap: balance;
+}
+
+/* Keyboard focus is part of polish, not an afterthought */
+:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/*
+ * Paper texture — a whisper of a dot grid on the page plane (the redline
+ * treatment): visible if you look, invisible if you don't.
+ */
+.dot-grid {
+  background-image: radial-gradient(rgba(28, 24, 18, 0.075) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* Kicker — tiny mono label with wide tracking; the editorial signpost */
+.kicker {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+  color: #8a8781;
+}
+.kicker-dot::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 10px;
+  border-radius: 9999px;
+  background: var(--color-brand-600);
+  vertical-align: 1px;
 }
 
 /* Micro-interactions */
@@ -83,6 +144,28 @@ body {
 .animate-rise { animation: rise-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .animate-pop  { animation: pop-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .pulse-once   { animation: pulse-ring 0.8s ease-out 1; }
+
+/* Primary CTA: pill, brand glow, arrow that leans into the click */
+.btn-primary {
+  transition: box-shadow 0.25s ease, background-color 0.2s ease, transform 0.15s ease;
+  box-shadow: var(--shadow-glow);
+}
+.btn-primary:hover:not(:disabled) {
+  box-shadow: var(--shadow-glow-lift);
+}
+.btn-primary:active:not(:disabled) {
+  transform: scale(0.985);
+}
+.btn-primary:disabled {
+  box-shadow: none;
+}
+.btn-arrow {
+  display: inline-block;
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.btn-primary:hover:not(:disabled) .btn-arrow {
+  transform: translateX(3px);
+}
 
 /* Waste gauge arc + meter transitions */
 .gauge-arc {
@@ -110,5 +193,5 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .animate-rise, .animate-pop, .pulse-once { animation: none; }
-  .meter-fill, .traffic-swatch, .gauge-arc, .dish-photo { transition: none; }
+  .meter-fill, .traffic-swatch, .gauge-arc, .dish-photo, .btn-primary, .btn-arrow { transition: none; }
 }

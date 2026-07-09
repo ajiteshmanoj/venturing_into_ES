@@ -8,10 +8,8 @@ export function Card({ children, className = '' }) {
   )
 }
 
-export function SectionLabel({ children }) {
-  return (
-    <p className="text-xs font-semibold uppercase tracking-widest text-stone-500">{children}</p>
-  )
+export function SectionLabel({ children, accent = false }) {
+  return <p className={`kicker ${accent ? 'kicker-dot' : ''}`}>{children}</p>
 }
 
 /* Status is never color-alone: each level pairs a color, an icon, and a label. */
@@ -49,8 +47,13 @@ export function TrafficLight({ level }) {
 
 export function OnboardingHint({ children }) {
   return (
-    <div className="animate-rise flex items-start gap-2.5 rounded-xl bg-brand-50 border border-brand-100 px-4 py-3 text-sm text-brand-800">
-      <span aria-hidden className="mt-0.5">💡</span>
+    <div className="animate-rise flex items-start gap-3 rounded-2xl border border-stone-900/8 bg-card px-4.5 py-3.5 text-sm leading-relaxed text-stone-600 shadow-card">
+      <span
+        aria-hidden
+        className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs text-brand-700"
+      >
+        ✦
+      </span>
       <span>{children}</span>
     </div>
   )
