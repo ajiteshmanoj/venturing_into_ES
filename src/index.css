@@ -18,33 +18,35 @@
  *   glow  — primary CTA only (brand-tinted, used sparingly)
  */
 @theme {
-  /* Brand teal — primary accent */
-  --color-brand-50: #f0faf8;
-  --color-brand-100: #d5f2ec;
-  --color-brand-200: #abe4da;
-  --color-brand-300: #74cfc2;
-  --color-brand-400: #3eb3a5;
-  --color-brand-500: #17998b;
-  --color-brand-600: #0d9488;
-  --color-brand-700: #0c6e64;
-  --color-brand-800: #0d5850;
-  --color-brand-900: #0e4842;
+  /* Brand — fresh garden green (matches the leaf logo). Primary accent. */
+  --color-brand-50: #eff9f0;
+  --color-brand-100: #d5f0d8;
+  --color-brand-200: #abe0b3;
+  --color-brand-300: #77cb86;
+  --color-brand-400: #48b25e;
+  --color-brand-500: #2fa04a;
+  --color-brand-600: #23913f;
+  --color-brand-700: #1d7534;
+  --color-brand-800: #1c5c2e;
+  --color-brand-900: #184a28;
 
-  /* Sage — secondary accent for soft fills */
-  --color-sage-100: #eef0e6;
-  --color-sage-200: #dde2cd;
-  --color-sage-300: #c2cba6;
-  --color-sage-400: #a3b07e;
-  --color-sage-500: #87965f;
-  --color-sage-600: #6b7a49;
-  --color-sage-700: #55613b;
+  /* Sage/leaf — secondary accent, straight off the logo, for soft fills */
+  --color-sage-100: #eef2e2;
+  --color-sage-200: #dbe5c6;
+  --color-sage-300: #c2d29f;
+  --color-sage-400: #a3ba75;
+  --color-sage-500: #86a057;
+  --color-sage-600: #6b8544;
+  --color-sage-700: #556a37;
 
-  /* Warm paper plane — cards float on it, they don't blend into it */
-  --color-cream: #f6f3ec;
-  --color-card: #fffdf8;
+  /* Fresh green-tinted paper plane — reads alive, not gray beige */
+  --color-cream: #eef3e8;
+  --color-card: #fbfdf6;
+  /* Soft green surface for section bands / tinted fills */
+  --color-mist: #e2ecd9;
 
-  /* Chart series (validated): teal + amber */
-  --color-chart-1: #0d9488;
+  /* Chart series (validated): garden green + warm amber */
+  --color-chart-1: #23913f;
   --color-chart-2: #bf7407;
 
   /* Status — always paired with icon + label, never color alone */
@@ -59,8 +61,8 @@
   --shadow-card: 0 1px 2px rgba(28, 24, 18, 0.04), 0 10px 30px -20px rgba(28, 24, 18, 0.22);
   --shadow-lift: 0 1px 2px rgba(28, 24, 18, 0.05), 0 18px 44px -26px rgba(28, 24, 18, 0.30);
   --shadow-float: 0 1px 2px rgba(28, 24, 18, 0.04), 0 30px 70px -30px rgba(28, 24, 18, 0.35);
-  --shadow-glow: 0 1px 2px rgba(28, 24, 18, 0.06), 0 10px 24px -10px rgba(13, 148, 136, 0.55);
-  --shadow-glow-lift: 0 1px 2px rgba(28, 24, 18, 0.06), 0 14px 34px -10px rgba(13, 148, 136, 0.65);
+  --shadow-glow: 0 1px 2px rgba(24, 40, 24, 0.06), 0 10px 24px -10px rgba(35, 145, 63, 0.6);
+  --shadow-glow-lift: 0 1px 2px rgba(24, 40, 24, 0.06), 0 14px 34px -10px rgba(35, 145, 63, 0.7);
 }
 
 html {
@@ -100,12 +102,29 @@ h1, h2, h3 {
 }
 
 /*
- * Paper texture — a whisper of a dot grid on the page plane (the redline
- * treatment): visible if you look, invisible if you don't.
+ * Paper texture — a whisper of a green dot grid on the page plane (the
+ * redline treatment): visible if you look, invisible if you don't.
  */
 .dot-grid {
-  background-image: radial-gradient(rgba(28, 24, 18, 0.075) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(35, 110, 50, 0.10) 1px, transparent 1px);
   background-size: 22px 22px;
+}
+
+/*
+ * Hero wash — a soft green glow from the top so the first screen has a
+ * catching colour moment instead of flat paper. Pair with .dot-grid.
+ */
+.hero-green {
+  background-image:
+    radial-gradient(130% 90% at 50% -20%, rgba(48, 160, 74, 0.20), transparent 62%),
+    linear-gradient(180deg, #e2f0dc 0%, var(--color-cream) 58%);
+}
+.hero-green.dot-grid {
+  background-image:
+    radial-gradient(rgba(35, 110, 50, 0.11) 1px, transparent 1px),
+    radial-gradient(130% 90% at 50% -20%, rgba(48, 160, 74, 0.20), transparent 62%),
+    linear-gradient(180deg, #e2f0dc 0%, var(--color-cream) 58%);
+  background-size: 22px 22px, 100% 100%, 100% 100%;
 }
 
 /* Kicker — tiny mono label with wide tracking; the editorial signpost */
@@ -139,8 +158,8 @@ h1, h2, h3 {
   100% { opacity: 1; transform: scale(1); }
 }
 @keyframes pulse-ring {
-  0%   { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.35); }
-  100% { box-shadow: 0 0 0 12px rgba(13, 148, 136, 0); }
+  0%   { box-shadow: 0 0 0 0 rgba(35, 145, 63, 0.35); }
+  100% { box-shadow: 0 0 0 12px rgba(35, 145, 63, 0); }
 }
 .animate-rise { animation: rise-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .animate-pop  { animation: pop-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }

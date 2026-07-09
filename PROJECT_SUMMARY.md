@@ -263,7 +263,7 @@ all three live; a check-out replaces the prediction with the measured result.
 | Layer | Choice |
 |---|---|
 | Framework | React 18 + Vite 6, single-page app |
-| Styling | Tailwind CSS v4 (custom teal/sage + warm-neutral tokens) |
+| Styling | Tailwind CSS v4 (fresh garden-green + sage tokens on green-tinted paper; forest-green dark surfaces) |
 | Type | Fraunces Variable (display) + Inter Variable (UI), self-hosted |
 | Charts | recharts (series colors validated for CVD safety + contrast) |
 | State | React state only — no backend, no localStorage (by design) |

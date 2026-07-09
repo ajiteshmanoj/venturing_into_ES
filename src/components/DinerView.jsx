@@ -204,7 +204,7 @@ export default function DinerView({ stats, addVisit, updateVisit, goToOperator }
 /* The "you scanned the QR at your table" framing. */
 function RestaurantStrip() {
   return (
-    <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[22px] border border-stone-700/50 bg-gradient-to-br from-stone-900 via-stone-900 to-stone-800 px-5 py-4 text-stone-100 shadow-lift">
+    <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[22px] border border-brand-800/50 bg-gradient-to-br from-[#123a1f] via-[#0f2e19] to-[#1a4a29] px-5 py-4 text-stone-100 shadow-lift">
       <div className="flex items-center gap-3.5">
         <div className="flex h-11 w-11 items-center justify-center rounded-full bg-amber-400/90 text-xl shadow-card" aria-hidden>
           🔥
@@ -230,7 +230,7 @@ function RestaurantStrip() {
 
 function PartyPicker({ setPartySize, loadOverOrderScenario }) {
   return (
-    <div className="dot-grid -mx-5 -mt-2 px-5 pb-16 pt-10 sm:pt-14">
+    <div className="hero-green dot-grid -mx-5 -mt-4 rounded-b-[32px] px-5 pb-16 pt-12 sm:pt-16">
       <div className="mx-auto max-w-2xl text-center">
         <p className="kicker kicker-dot">Step 1 of 3 · Your table</p>
         <h2 className="font-display mt-5 text-[42px] font-semibold leading-[1.04] tracking-tight sm:text-[54px]">
@@ -777,7 +777,7 @@ function GreenReceipt({ confirmed, startOver, goToOperator, onCheckout, onChecki
     <div className="mx-auto max-w-lg animate-pop">
       <Card className="overflow-hidden">
         {/* Receipt header */}
-        <div className="bg-stone-900 px-8 pb-6 pt-7 text-center text-stone-100">
+        <div className="bg-gradient-to-br from-[#123a1f] via-[#0f2e19] to-[#1a4a29] px-8 pb-6 pt-7 text-center text-stone-100">
           <p className="font-display text-2xl font-semibold">{RESTAURANT.name}</p>
           <p className="mt-0.5 text-xs text-stone-400">
             {RESTAURANT.nameZh} · Table {RESTAURANT.table} · {visit.date}
@@ -1405,7 +1405,7 @@ function RewardsCard({ earned, members }) {
     hour < 12 ? ['Good morning', '☀️'] : hour < 18 ? ['Good afternoon', '☀️'] : ['Good evening', '🌙']
 
   return (
-    <div className="mt-4 overflow-hidden rounded-[22px] border border-brand-800/60 bg-gradient-to-br from-brand-900 via-[#0c3f3a] to-stone-900 p-5 text-white shadow-lift">
+    <div className="mt-4 overflow-hidden rounded-[22px] border border-brand-800/60 bg-gradient-to-br from-brand-900 via-[#123a1f] to-[#0d2614] p-5 text-white shadow-lift">
       <p className="font-display text-[22px] font-semibold tracking-tight">
         {greeting}, {DINER_NAME} <span aria-hidden>{sky}</span>
       </p>

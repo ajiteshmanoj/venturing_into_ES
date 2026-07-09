@@ -10,9 +10,9 @@ import { Card, SectionLabel, OnboardingHint, fmtG } from './ui.jsx'
 
 /* Chart chrome per the dataviz guidance: recessive grid, muted axis ink,
  * thin marks, validated series colors (teal #0d9488 / amber #bf7407). */
-const INK_MUTED = '#8a8781'
-const GRID = '#e7e5dd'
-const SERIES_1 = '#0d9488'
+const INK_MUTED = '#7d857a'
+const GRID = '#dbe4d3'
+const SERIES_1 = '#23913f'
 const SERIES_2 = '#bf7407'
 const axisProps = { tick: { fill: INK_MUTED, fontSize: 12 }, axisLine: { stroke: '#c9c6bd' }, tickLine: false }
 
@@ -85,7 +85,7 @@ export default function OperatorView({ visits }) {
                 <CartesianGrid stroke={GRID} vertical={false} />
                 <XAxis dataKey="size" {...axisProps} />
                 <YAxis {...axisProps} unit="%" domain={[0, 40]} />
-                <Tooltip content={<ChartTip unit="%" />} cursor={{ fill: 'rgba(13,148,136,0.06)' }} />
+                <Tooltip content={<ChartTip unit="%" />} cursor={{ fill: 'rgba(35,145,63,0.07)' }} />
                 <Bar dataKey="rate" name="Avg waste rate" fill={SERIES_1} radius={[4, 4, 0, 0]} maxBarSize={36}>
                   <LabelList dataKey="rate" position="top" formatter={(v) => `${v}%`}
                     style={{ fill: '#52514e', fontSize: 11, fontWeight: 600 }} />
