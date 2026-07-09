@@ -83,6 +83,7 @@ The demo arc: **predict → act → verify.**
 | **Closed learning loop** | One in-memory history feeds diner predictions, operator dashboard, and derived stats — a confirmed order updates all three live |
 | **Transparent rule-based engine** | Every prediction decomposable in the UI; no fake AI (see §5) |
 | **Deterministic demo** | Fixed RNG seed, presenter-controlled outcomes, 🎬 scenario loader, ↺ reset — every run identical on stage |
+| **Brand identity** | Bowl-mark logo (header wordmark, favicon, OG image), garden-green palette, editorial design language (see §9) |
 
 ## 3. Research grounding (what the numbers are calibrated to)
 
@@ -264,6 +265,8 @@ all three live; a check-out replaces the prediction with the measured result.
 |---|---|
 | Framework | React 18 + Vite 6, single-page app |
 | Styling | Tailwind CSS v4 (fresh garden-green + sage tokens on green-tinted paper; forest-green dark surfaces) |
+| Design language | Editorial "paper" canvas with dot-grid texture, kicker + mono data voice, floating pill nav, layered shadows, serif stat numerals, ticket-style receipt details |
+| Brand | Bowl-mark logo in `public/` — header wordmark, favicon, and OG share image |
 | Type | Fraunces Variable (display) + Inter Variable (UI), self-hosted |
 | Charts | recharts (series colors validated for CVD safety + contrast) |
 | State | React state only — no backend, no localStorage (by design) |
