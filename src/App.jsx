@@ -43,10 +43,13 @@ export default function App() {
       {/* Floating pill nav — detached from the page plane, like a table card */}
       <header className="sticky top-0 z-20 px-4 pb-1 pt-3 sm:px-5">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-[26px] border border-stone-900/5 bg-card/95 py-2 pl-3 pr-2.5 shadow-float backdrop-blur sm:rounded-full">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-600 text-lg text-white" aria-hidden>
-              🥢
-            </div>
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/mottainai-mark.png"
+              alt=""
+              aria-hidden
+              className="h-10 w-10 shrink-0 object-contain"
+            />
             <div>
               <h1 className="font-display text-lg font-semibold leading-none tracking-tight">
                 Mottainai <span className="ml-1 text-sm font-normal text-stone-400">もったいない</span>
