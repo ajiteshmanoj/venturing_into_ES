@@ -1,6 +1,6 @@
 # Mottainai — Project Summary
 
-*As of 8 July 2026*
+*As of 9 July 2026*
 
 **Right-size every table. Waste less, spend less.**
 
@@ -23,7 +23,7 @@ table" — and the surplus goes to the bin. Mottainai sits inside the
 restaurant's QR-ordering flow and uses the restaurant's **own historical waste
 data** to predict, at order time, how much of the food will go uneaten — then
 gives the table **one-tap ways to act on it** (smaller portions, fewer dishes,
-tapau), and **verifies the outcome** after the meal.
+staged serving, tapau), and **verifies the outcome** after the meal.
 
 The core design principle comes straight from the research: **information
 alone does not reduce waste — letting people act does.** Every screen is
@@ -31,7 +31,60 @@ built around that.
 
 The demo arc: **predict → act → verify.**
 
-## 2. Research grounding (what the numbers are calibrated to)
+## 2. Features
+
+### Diner View — predict
+
+| Feature | What it does |
+|---|---|
+| **Party-size guidance** | 1–8+ entry with a "tables your size finish ~N dishes" hint |
+| **Photo menu with finish-rate chips** | 12 zi char dishes; "✓ Usually finished" / "△ Often left over" chips driven by per-dish waste propensity |
+| **Live Order Checker** | Gentle nudges for over-ordering, carb-pairing, and under-ordering — never blocks |
+| **Appetite-aware waste prediction** | Animated gauge + traffic light; waste scales with the whole order vs. the table's appetite, and "often left over" dishes carry a higher floor even within appetite |
+| **"Why this estimate?"** | Always-available transparency panel listing every input — no black box |
+
+### Diner View — act
+
+| Feature | What it does |
+|---|---|
+| **Portion choices** | Half / Regular / Sharing per dish — predicted waste *and* price update live |
+| **✨ Right-size it for me** | One tap halves the largest portions until the prediction turns green |
+| **🥡 Tapau toggle** | Packed leftovers credited as meals (65% recovery), not waste |
+| **🍽 Smart serve (incremental ordering)** | Over-appetite orders are staged: round 1 fires now, the excess goes on hold; a mid-meal **"Still hungry?"** check-in fires or skips each held dish — skipped dishes are never cooked and never billed |
+| **Green receipt** | Real bill anatomy (10% service, 9% GST) plus a savings strip: grams avoided, S$ off the bill, eco-points |
+
+### Diner View — verify
+
+| Feature | What it does |
+|---|---|
+| **📸 Table check-out** | Before/after verification of the meal; measured-vs-predicted reveal ("beat the estimate by 68 g") |
+| **Rewards for beating the prediction** | Points on the beat (fair target for every table), split across every party member; government-voucher card (illustrative) |
+| **📉 Your waste trend** | The diner's personal leftover history across check-outs, with today's measured result appended and highlighted |
+| **Model re-learning** | The measured result overwrites the prediction in shared history — the model learns from reality |
+
+### Operator View — the business case
+
+| Feature | What it does |
+|---|---|
+| **Header stats** | Food waste (kg, 4 weeks), waste rate vs. baseline (−28%), cost saved (S$), meals'-worth saved |
+| **Waste-trend chart** | Weekly waste rate with pilot-start marker and dashed pre-pilot baseline |
+| **Waste by party size** | Shows mid-size groups (3–5) over-order most |
+| **ROI card** | S$99/mo subscription vs. modelled savings → "pays for itself in N days" |
+| **Dish waste leaderboard** | Chronically unfinished dishes, each with a menu-engineering action |
+| **Sustainability & compliance** | CO₂e avoided + Singapore Resource Sustainability Act reporting hook |
+| **Peer benchmark** | This outlet vs. simulated peers — the data-network moat |
+| **Live table feed** | Confirmed diner orders appear instantly; checked-out visits carry a "✓ Checked-out" tag |
+| **Honest measurement card** | Real deployments weigh per service; table/dish figures are attributed estimates |
+
+### System
+
+| Feature | What it does |
+|---|---|
+| **Closed learning loop** | One in-memory history feeds diner predictions, operator dashboard, and derived stats — a confirmed order updates all three live |
+| **Transparent rule-based engine** | Every prediction decomposable in the UI; no fake AI (see §5) |
+| **Deterministic demo** | Fixed RNG seed, presenter-controlled outcomes, 🎬 scenario loader, ↺ reset — every run identical on stage |
+
+## 3. Research grounding (what the numbers are calibrated to)
 
 All data in the demo is simulated, but deliberately calibrated to published
 reference points so it is defensible on stage:
@@ -46,7 +99,7 @@ reference points so it is defensible on stage:
 | Portion weights | Fried rice ~300–400 g, zi char dish ~200–350 g, whole fish ~400–600 g, soup ~500 ml+ | Menu data (labelled common-sense anchors) |
 | Appetite anchor | ~420 g/person per sitting | Appetite-aware prediction (labelled common-sense anchor) |
 
-## 3. What's built — two connected views
+## 4. Feature detail — two connected views
 
 ### Diner View (the QR-ordering experience)
 
@@ -131,7 +184,7 @@ Framed as the ordering flow of a fictional restaurant — **"Golden Wok Zi Char
   at the clearing station, not per plate; all table/dish-level figures are
   attributed estimates.
 
-## 4. The recommendation engine (transparent, rule-based — no fake AI)
+## 5. The recommendation engine (transparent, rule-based — no fake AI)
 
 All logic lives in `src/engine/recommend.js`, commented for judge questions:
 
@@ -147,11 +200,11 @@ All logic lives in `src/engine/recommend.js`, commented for judge questions:
 4. **Tapau credit** — 65% of predicted leftovers recovered as meals.
 5. **Recommendation** — smallest dish count that feeds the party (servings
    constraint) while sitting in the historically lowest-waste bucket.
-5b. **Smart-serve split** — when the whole-order prediction isn't green,
+6. **Smart-serve split** — when the whole-order prediction isn't green,
    deterministically move the dishes with the largest expected bin
    contribution (grams × waste propensity) to a held round 2, stopping once
    round 1 turns green; round 1 must always still feed the party on its own.
-6. **Check-out points** — participation credit + (predicted − measured)/10 g,
+7. **Check-out points** — participation credit + (predicted − measured)/10 g,
    split evenly across the party; no penalty for missing (punishment would
    kill check-out participation, and the check-out data is what the operator
    pays for).
@@ -160,7 +213,7 @@ All logic lives in `src/engine/recommend.js`, commented for judge questions:
 the operator dashboard, *and* the derived stats — a confirmed order updates
 all three live; a check-out replaces the prediction with the measured result.
 
-## 5. Seed data
+## 6. Seed data
 
 `src/data/seedData.js` — fully documented at the top of the file:
 
@@ -173,9 +226,11 @@ all three live; a check-out replaces the prediction with the measured result.
 - Fixed RNG seed (mulberry32) → **every demo run is identical**.
 - Derived stats: average waste rate by (party-size band × dishes-per-person
   bucket), recomputed live from history.
+- The demo diner's personal check-out history (per-person leftovers,
+  trending down) powering "Your waste trend."
 - Simulated peer benchmarks and CO₂e conversion constants.
 
-## 6. Honesty framing (credibility by design)
+## 7. Honesty framing (credibility by design)
 
 - Footer badge on both views: "Demo runs on **simulated data** modelled on
   published food-waste research."
@@ -187,7 +242,7 @@ all three live; a check-out replaces the prediction with the measured result.
 - Portion weights and appetite labelled common-sense anchors.
 - No number presented as a measured real-world result.
 
-## 7. Demo aids
+## 8. Demo aids
 
 - **🎬 Load over-order scenario** — pre-fills a table of 3 with 5 large
   dishes → red 47% prediction; **✨ Right-size** flips it green live. The
@@ -196,7 +251,7 @@ all three live; a check-out replaces the prediction with the measured result.
 - **↺ Reset** — returns everything to the seeded state between runs.
 - Onboarding hints on both views; empty states; reduced-motion support.
 
-## 8. Tech
+## 9. Tech
 
 | Layer | Choice |
 |---|---|
@@ -222,7 +277,7 @@ public/dishes/               # photography + CREDITS.md
 
 **Run locally:** `npm install && npm run dev`
 
-## 9. The 2-minute demo script
+## 10. The 2-minute demo script
 
 1. Diner View → **🎬 Load over-order scenario** — table of 3, 5 dishes,
    gauge red (~47%).
@@ -231,7 +286,8 @@ public/dishes/               # photography + CREDITS.md
 4. Toggle **🥡 tapau** — estimate drops further (second lever).
 5. **Send order** → green receipt (service charge, GST, savings, eco-points).
 6. **📸 Table check-out** → tap "Spotless" → "beat the estimate by 68 g,"
-   +12 pts split across the party, government-voucher card.
+   +12 pts split across the party, government-voucher card, and the diner's
+   personal **📉 waste trend** with today highlighted.
 7. **See it verified on the dashboard** → the visit lands "✓ Checked-out"
    with the measured number; every stat updates.
 8. Walk the business case: ROI, dish leaderboard, CO₂e/NEA, peer benchmark.
@@ -243,7 +299,7 @@ round 1 only). After sending, tap **Mid-meal check-in — still hungry?** and
 skip the held dishes: "2 plates never cooked — 780 g out of the bin, S$25 off
 the bill." Then check out as usual.
 
-## 10. Roadmap (mention, don't build)
+## 11. Roadmap (mention, don't build)
 
 - **Kitchen prep-planning forecasts** — pre-consumer waste is the larger
   cost pool; the same visit history predicts tomorrow's demand per dish.
