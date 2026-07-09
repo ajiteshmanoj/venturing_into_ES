@@ -292,7 +292,7 @@ public/dishes/               # photography + CREDITS.md
 1. Diner View → **🎬 Load over-order scenario** — table of 3, 5 dishes,
    gauge red (~47%).
 2. Open **"Why this estimate?"** — show the transparent inputs.
-3. **✨ Right-size it for me** — flips green, bill drops S$76 → S$49.
+3. **✨ Right-size it for me** — flips green, bill drops S$60 → S$45.
 4. Toggle **🥡 tapau** — estimate drops further (second lever).
 5. **Send order** → green receipt (service charge, GST, savings, eco-points).
 6. **📸 Table check-out** → tap "Spotless" → "beat the estimate by 68 g,"
@@ -306,7 +306,7 @@ public/dishes/               # photography + CREDITS.md
 Alternative arc (incremental ordering): at step 3, toggle **🍽 Smart serve**
 instead — 3 dishes fire now, 2 go on hold (estimate flips green, bill drops to
 round 1 only). After sending, tap **Mid-meal check-in — still hungry?** and
-skip the held dishes: "2 plates never cooked — 780 g out of the bin, S$25 off
+skip the held dishes: "2 plates never cooked — 780 g out of the bin, S$17 off
 the bill." Then check out as usual.
 
 ## 11. Roadmap (mention, don't build)

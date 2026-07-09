@@ -35,6 +35,11 @@
 
 // ---------------------------------------------------------------------------
 // Menu — 12 shared zi char dishes.
+// Prices are calibrated to 2024–25 neighbourhood (coffeeshop) zi char menus
+// in Singapore — fried rice / hor fun from ~S$8, small sweet & sour pork
+// ~S$13, sambal kangkong ~S$9–10, har cheong gai ~S$10–12, salted egg prawns
+// ~S$16–18, whole steamed seabass ~S$28 (SethLui / Eatbook / HungryGoWhere
+// zi char guides).
 // portionWeightG uses the anchors above; typicalServings = people one regular
 // portion feeds; portionable = kitchen offers Half / Sharing sizes;
 // wastePropensity = how often this dish comes back unfinished relative to the
@@ -42,18 +47,18 @@
 // Photos: Wikimedia Commons, see public/dishes/CREDITS.md.
 // ---------------------------------------------------------------------------
 export const MENU = [
-  { id: 'fried-rice',   name: 'Yangzhou Fried Rice',   nameZh: '扬州炒饭', category: 'rice/noodle', price: 12, portionWeightG: 380, typicalServings: 2, portionable: true,  wastePropensity: 1.25, emoji: '🍚' },
-  { id: 'hor-fun',      name: 'Beef Hor Fun',          nameZh: '干炒牛河', category: 'rice/noodle', price: 13, portionWeightG: 400, typicalServings: 2, portionable: true,  wastePropensity: 1.2,  emoji: '🍜' },
-  { id: 'ss-pork',      name: 'Sweet & Sour Pork',     nameZh: '咕噜肉',   category: 'meat',        price: 15, portionWeightG: 300, typicalServings: 3, portionable: true,  wastePropensity: 0.95, emoji: '🍖' },
-  { id: 'kungpao',      name: 'Kung Pao Chicken',      nameZh: '宫保鸡丁', category: 'meat',        price: 14, portionWeightG: 290, typicalServings: 3, portionable: true,  wastePropensity: 0.9,  emoji: '🌶️' },
-  { id: 'hcg-chicken',  name: 'Har Cheong Gai',        nameZh: '虾酱鸡',   category: 'meat',        price: 15, portionWeightG: 280, typicalServings: 3, portionable: true,  wastePropensity: 0.8,  emoji: '🍗' },
-  { id: 'kailan',       name: 'Stir-fried Kailan',     nameZh: '蚝油芥兰', category: 'vegetable',   price: 10, portionWeightG: 250, typicalServings: 3, portionable: true,  wastePropensity: 1.1,  emoji: '🥬' },
-  { id: 'sambal-veg',   name: 'Sambal Kangkong',       nameZh: '马来风光', category: 'vegetable',   price: 11, portionWeightG: 260, typicalServings: 3, portionable: true,  wastePropensity: 1.05, emoji: '🥗' },
-  { id: 'se-prawns',    name: 'Salted Egg Prawns',     nameZh: '咸蛋虾',   category: 'seafood',     price: 22, portionWeightG: 260, typicalServings: 3, portionable: true,  wastePropensity: 0.7,  emoji: '🍤' },
+  { id: 'fried-rice',   name: 'Yangzhou Fried Rice',   nameZh: '扬州炒饭', category: 'rice/noodle', price: 8, portionWeightG: 380, typicalServings: 2, portionable: true,  wastePropensity: 1.25, emoji: '🍚' },
+  { id: 'hor-fun',      name: 'Beef Hor Fun',          nameZh: '干炒牛河', category: 'rice/noodle', price: 9, portionWeightG: 400, typicalServings: 2, portionable: true,  wastePropensity: 1.2,  emoji: '🍜' },
+  { id: 'ss-pork',      name: 'Sweet & Sour Pork',     nameZh: '咕噜肉',   category: 'meat',        price: 13, portionWeightG: 300, typicalServings: 3, portionable: true,  wastePropensity: 0.95, emoji: '🍖' },
+  { id: 'kungpao',      name: 'Kung Pao Chicken',      nameZh: '宫保鸡丁', category: 'meat',        price: 12, portionWeightG: 290, typicalServings: 3, portionable: true,  wastePropensity: 0.9,  emoji: '🌶️' },
+  { id: 'hcg-chicken',  name: 'Har Cheong Gai',        nameZh: '虾酱鸡',   category: 'meat',        price: 11, portionWeightG: 280, typicalServings: 3, portionable: true,  wastePropensity: 0.8,  emoji: '🍗' },
+  { id: 'kailan',       name: 'Stir-fried Kailan',     nameZh: '蚝油芥兰', category: 'vegetable',   price: 9, portionWeightG: 250, typicalServings: 3, portionable: true,  wastePropensity: 1.1,  emoji: '🥬' },
+  { id: 'sambal-veg',   name: 'Sambal Kangkong',       nameZh: '马来风光', category: 'vegetable',   price: 9, portionWeightG: 260, typicalServings: 3, portionable: true,  wastePropensity: 1.05, emoji: '🥗' },
+  { id: 'se-prawns',    name: 'Salted Egg Prawns',     nameZh: '咸蛋虾',   category: 'seafood',     price: 18, portionWeightG: 260, typicalServings: 3, portionable: true,  wastePropensity: 0.7,  emoji: '🍤' },
   { id: 'steam-fish',   name: 'Steamed Whole Seabass', nameZh: '清蒸鲈鱼', category: 'seafood',     price: 28, portionWeightG: 520, typicalServings: 4, portionable: false, wastePropensity: 0.9,  emoji: '🐟' },
   { id: 'mapo',         name: 'Mapo Tofu',             nameZh: '麻婆豆腐', category: 'tofu',        price: 10, portionWeightG: 320, typicalServings: 3, portionable: true,  wastePropensity: 1.05, emoji: '🥘' },
-  { id: 'claypot-tofu', name: 'Claypot Tofu',          nameZh: '砂锅豆腐', category: 'tofu',        price: 13, portionWeightG: 350, typicalServings: 3, portionable: true,  wastePropensity: 1.0,  emoji: '🍲' },
-  { id: 'tomyum',       name: 'Tom Yum Soup',          nameZh: '冬炎汤',   category: 'soup',        price: 12, portionWeightG: 550, typicalServings: 4, portionable: true,  wastePropensity: 1.3,  emoji: '🍵' },
+  { id: 'claypot-tofu', name: 'Claypot Tofu',          nameZh: '砂锅豆腐', category: 'tofu',        price: 12, portionWeightG: 350, typicalServings: 3, portionable: true,  wastePropensity: 1.0,  emoji: '🍲' },
+  { id: 'tomyum',       name: 'Tom Yum Soup',          nameZh: '冬炎汤',   category: 'soup',        price: 11, portionWeightG: 550, typicalServings: 4, portionable: true,  wastePropensity: 1.3,  emoji: '🍵' },
 ]
 
 export const MENU_BY_ID = Object.fromEntries(MENU.map((d) => [d.id, d]))

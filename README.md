@@ -31,7 +31,7 @@ Open http://localhost:5173 (Vite prints the exact URL).
    dishes-per-person, the past visits behind the rate, and the dish-mix
    adjustment. No black box.
 3. Tap **✨ Right-size it for me** — portions flip to Half, the gauge animates
-   down, the light flips **green**, and the bill drops S$76 → S$49.
+   down, the light flips **green**, and the bill drops S$60 → S$45.
    *Acting* beats warning — the research point, made tangible.
 4. Toggle **🥡 tapau** — packed leftovers are meals, not waste; the estimate
    drops further. Second action lever.
