@@ -204,6 +204,56 @@ export function nudgeFor(stats, partySize, order) {
 }
 
 /**
+ * RULE 4 — SMART SERVE: stage the order instead of firing it all at once.
+ * The classic zi char failure mode is ordering for the hungriest moment of
+ * the meal — everything hits the table in the first ten minutes, and the
+ * dishes ordered "just in case" are the ones that come back unfinished.
+ *
+ * When the order exceeds what the table can comfortably eat, propose a
+ * split: fire a round 1 that still feeds everyone, hold the rest. Near the
+ * end of the meal the table decides — still hungry? Round 2 fires in one
+ * tap. Comfortably full? The held dishes are never cooked and never billed:
+ * waste avoided BEFORE it exists, not managed after.
+ *
+ * The split is deterministic (demo runs are identical): hold the dishes
+ * with the largest expected bin contribution (grams on the table × how
+ * often that dish historically comes back unfinished), stopping once the
+ * round-1 prediction turns green. Round 1 must always still feed the party
+ * on its own (servings ≥ party size, at least the feeding-floor dish count).
+ * Returns null when the order is already right-sized — no split to suggest.
+ */
+export function smartServeSplit(stats, partySize, order, opts = {}) {
+  if (!partySize || order.length < 2) return null
+  const fullPrediction = predictWaste(stats, partySize, order, opts)
+  if (fullPrediction.level === 'low') return null
+
+  const binContribution = (line) => {
+    const dish = MENU_BY_ID[line.dishId]
+    return dish.portionWeightG * PORTIONS[line.portion].weightFactor * dish.wastePropensity
+  }
+  const ranked = [...order].sort((a, b) => binContribution(b) - binContribution(a))
+
+  const { min: minToFeed } = recommendedDishCount(partySize)
+  let now = [...order]
+  const later = []
+  for (const line of ranked) {
+    if (predictWaste(stats, partySize, now, opts).level === 'low') break
+    const candidate = now.filter((l) => l.key !== line.key)
+    // Round 1 alone must still feed the table — never hold below the floor.
+    if (candidate.length < minToFeed || orderMetrics(candidate).totalServings < partySize) continue
+    now = candidate
+    later.push(line)
+  }
+  if (later.length === 0) return null
+  return {
+    now,
+    later,
+    nowPrediction: predictWaste(stats, partySize, now, opts),
+    fullPrediction,
+  }
+}
+
+/**
  * TABLE CHECK-OUT — the verification loop.
  * At order time we PREDICT leftovers; after the meal the table logs the
  * actual outcome (in a real deployment: an after-photo scored by vision or

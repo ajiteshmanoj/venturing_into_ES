@@ -5,7 +5,7 @@ import {
 } from '../data/seedData.js'
 import {
   predictWaste, nudgeFor, recommendedDishCount, rightSizingSavings,
-  checkoutOutcomes, checkoutPoints,
+  checkoutOutcomes, checkoutPoints, smartServeSplit,
 } from '../engine/recommend.js'
 import { Card, SectionLabel, TrafficLight, OnboardingHint, LEVELS, fmtG, fmtSGD } from './ui.jsx'
 
@@ -19,16 +19,31 @@ export default function DinerView({ stats, addVisit, updateVisit, goToOperator }
   const [partySize, setPartySize] = useState(null)
   const [order, setOrder] = useState([]) // [{ key, dishId, portion }]
   const [tapau, setTapau] = useState(false)
+  const [smartServe, setSmartServe] = useState(false)
   const [confirmed, setConfirmed] = useState(null)
+  const [checkingIn, setCheckingIn] = useState(false)
   const [checkingOut, setCheckingOut] = useState(false)
   const [whyOpen, setWhyOpen] = useState(false)
   const [flash, setFlash] = useState(false)
 
-  const prediction = useMemo(
-    () => predictWaste(stats, partySize, order, { tapau }),
+  /* Smart serve: when the order exceeds appetite the engine proposes a split —
+   * fire round 1 now, hold the excess. With the toggle on, everything below
+   * (prediction, nudge, bill, the kitchen ticket) runs on round 1 only. */
+  const split = useMemo(
+    () => smartServeSplit(stats, partySize, order, { tapau }),
     [stats, partySize, order, tapau],
   )
-  const nudge = useMemo(() => nudgeFor(stats, partySize, order), [stats, partySize, order])
+  const activeOrder = smartServe && split ? split.now : order
+  const heldLines = smartServe && split ? split.later : []
+
+  const prediction = useMemo(
+    () => predictWaste(stats, partySize, activeOrder, { tapau }),
+    [stats, partySize, activeOrder, tapau],
+  )
+  const nudge = useMemo(
+    () => nudgeFor(stats, partySize, activeOrder),
+    [stats, partySize, activeOrder],
+  )
 
   const addDish = (dishId) => setOrder((o) => [...o, { key: ++lineKey, dishId, portion: 'regular' }])
   const removeLine = (key) => setOrder((o) => o.filter((l) => l.key !== key))
@@ -66,6 +81,7 @@ export default function DinerView({ stats, addVisit, updateVisit, goToOperator }
     setPartySize(3)
     setConfirmed(null)
     setTapau(false)
+    setSmartServe(false)
     setOrder([
       { key: ++lineKey, dishId: 'fried-rice', portion: 'regular' },
       { key: ++lineKey, dishId: 'hor-fun', portion: 'regular' },
@@ -77,32 +93,53 @@ export default function DinerView({ stats, addVisit, updateVisit, goToOperator }
   }
 
   const confirmOrder = () => {
-    const savings = rightSizingSavings(stats, partySize, order, { tapau })
+    // Only round 1 goes to the kitchen (and into history) — held dishes are
+    // not cooked yet, so they can't be wasted yet.
+    const savings = rightSizingSavings(stats, partySize, activeOrder, { tapau })
     const visit = {
       id: `live-${Date.now()}`,
       date: new Date().toISOString().slice(0, 10),
       week: 11,
       partySize,
-      dishIds: order.map((l) => l.dishId),
+      dishIds: activeOrder.map((l) => l.dishId),
       dishCount: Math.round(prediction.effectiveDishes * 10) / 10,
       totalFoodWeightG: Math.round(prediction.totalWeightG),
       wastedWeightG: prediction.predictedWasteG,
       source: 'live',
     }
     addVisit(visit)
-    setConfirmed({ visit, prediction, order, savings })
+    setConfirmed({ visit, prediction, order: activeOrder, heldLines, savings })
   }
 
   const startOver = () => {
     setConfirmed(null)
+    setCheckingIn(false)
     setCheckingOut(false)
     setOrder([])
     setPartySize(null)
     setTapau(false)
+    setSmartServe(false)
     setWhyOpen(false)
   }
 
   // ---------------------------------------------------------------- screens
+  if (confirmed && checkingIn) {
+    return (
+      <MidMealCheckin
+        confirmed={confirmed}
+        stats={stats}
+        tapau={tapau}
+        updateVisit={updateVisit}
+        onContinue={(updated) => {
+          setConfirmed(updated)
+          setCheckingIn(false)
+          setCheckingOut(true)
+        }}
+        goToOperator={goToOperator}
+        startOver={startOver}
+      />
+    )
+  }
   if (confirmed && checkingOut) {
     return (
       <TableCheckout
@@ -120,6 +157,7 @@ export default function DinerView({ stats, addVisit, updateVisit, goToOperator }
         startOver={startOver}
         goToOperator={goToOperator}
         onCheckout={() => setCheckingOut(true)}
+        onCheckin={() => setCheckingIn(true)}
       />
     )
   }
@@ -142,6 +180,10 @@ export default function DinerView({ stats, addVisit, updateVisit, goToOperator }
           nudge={nudge}
           tapau={tapau}
           setTapau={setTapau}
+          split={split}
+          smartServe={smartServe}
+          setSmartServe={setSmartServe}
+          heldLines={heldLines}
           whyOpen={whyOpen}
           setWhyOpen={setWhyOpen}
           flash={flash}
@@ -218,10 +260,16 @@ function PartyPicker({ setPartySize, loadOverOrderScenario }) {
 function OrderScreen(props) {
   const {
     partySize, setPartySize, order, addDish, removeLine, setPortion,
-    prediction, nudge, tapau, setTapau, whyOpen, setWhyOpen, flash,
+    prediction, nudge, tapau, setTapau, split, smartServe, setSmartServe,
+    heldLines, whyOpen, setWhyOpen, flash,
     rightSize, confirmOrder, loadOverOrderScenario,
   } = props
   const rec = recommendedDishCount(partySize)
+  const heldKeys = new Set(heldLines.map((l) => l.key))
+  const heldPrice = heldLines.reduce(
+    (sum, l) => sum + MENU_BY_ID[l.dishId].price * PORTIONS[l.portion].priceFactor,
+    0,
+  )
 
   return (
     <>
@@ -282,11 +330,24 @@ function OrderScreen(props) {
                 {order.map((line) => {
                   const dish = MENU_BY_ID[line.dishId]
                   const portion = PORTIONS[line.portion]
+                  const held = heldKeys.has(line.key)
                   return (
-                    <li key={line.key} className="animate-pop rounded-xl border border-stone-100 bg-stone-50/60 p-3">
+                    <li
+                      key={line.key}
+                      className={`animate-pop rounded-xl border p-3 ${
+                        held
+                          ? 'border-dashed border-stone-300 bg-white opacity-70'
+                          : 'border-stone-100 bg-stone-50/60'
+                      }`}
+                    >
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-sm font-semibold">
                           {dish.emoji} {dish.name}
+                          {held && (
+                            <span className="ml-2 rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-stone-500">
+                              ⏸ Round 2 · on hold
+                            </span>
+                          )}
                         </span>
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium tabular-nums text-stone-600">
@@ -348,6 +409,15 @@ function OrderScreen(props) {
               </div>
             )}
 
+            {/* Smart serve — stage the order: fire round 1, hold the excess */}
+            {split && (
+              <SmartServeCard
+                split={split}
+                smartServe={smartServe}
+                setSmartServe={setSmartServe}
+              />
+            )}
+
             {/* Waste prediction */}
             {order.length > 0 && (
               <WastePrediction
@@ -371,6 +441,11 @@ function OrderScreen(props) {
               <p className="text-right text-[11px] text-stone-400">
                 + 10% svc &amp; 9% GST at checkout
               </p>
+              {heldLines.length > 0 && (
+                <p className="text-right text-[11px] font-medium text-brand-700">
+                  + {fmtSGD(heldPrice)} on hold — billed only if round 2 is served
+                </p>
+              )}
             </div>
 
             <button
@@ -378,7 +453,9 @@ function OrderScreen(props) {
               disabled={order.length === 0}
               className="mt-4 w-full rounded-xl bg-brand-600 py-3.5 text-base font-bold text-white shadow-card transition-all hover:bg-brand-700 hover:shadow-lift active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-400 disabled:shadow-none"
             >
-              Send order to kitchen →
+              {heldLines.length > 0
+                ? `Send round 1 (${order.length - heldLines.length} dishes) to kitchen →`
+                : 'Send order to kitchen →'}
             </button>
           </Card>
         </div>
@@ -503,6 +580,54 @@ function WasteGauge({ rate, level }) {
   )
 }
 
+/*
+ * SMART SERVE suggestion — lever #3. The engine proposed a split (fire
+ * round 1 now, hold the excess); this card sells it and hosts the toggle.
+ * Ordering happens at the hungriest moment of the meal — smart serve lets
+ * the table decide about the last few dishes when they actually know.
+ */
+function SmartServeCard({ split, smartServe, setSmartServe }) {
+  const heldG = split.later.reduce(
+    (sum, l) => sum + MENU_BY_ID[l.dishId].portionWeightG * PORTIONS[l.portion].weightFactor,
+    0,
+  )
+  const heldNames = [...new Set(split.later.map((l) => MENU_BY_ID[l.dishId].name))].join(' + ')
+
+  return (
+    <div className="animate-rise mt-4 rounded-xl border border-brand-200 bg-brand-50/70 p-4">
+      <label className="flex cursor-pointer items-center justify-between gap-3">
+        <span className="text-sm font-bold text-brand-900">
+          🍽 Smart serve — start with {split.now.length}, hold {split.later.length}
+        </span>
+        <span
+          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${smartServe ? 'bg-brand-600' : 'bg-stone-300'}`}
+        >
+          <input
+            type="checkbox"
+            checked={smartServe}
+            onChange={(e) => setSmartServe(e.target.checked)}
+            className="peer sr-only"
+          />
+          <span
+            className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-card transition-all ${smartServe ? 'left-[22px]' : 'left-0.5'}`}
+          />
+        </span>
+      </label>
+      <p className="mt-1.5 text-xs leading-relaxed text-brand-900/80">
+        Everyone orders at their hungriest. Fire {split.now.length} dishes now and keep{' '}
+        <strong>{heldNames}</strong> (~{fmtG(heldG)}) on hold — near the end of the meal we'll ask:{' '}
+        <em>still hungry?</em> One tap fires round 2. Comfortably full? It's never cooked and never
+        billed.
+      </p>
+      {smartServe && (
+        <p className="mt-2 rounded-lg bg-white/70 px-3 py-2 text-[11px] font-medium text-brand-800">
+          ✓ Round 2 is on hold — the estimate and bill below cover round 1 only.
+        </p>
+      )}
+    </div>
+  )
+}
+
 /* The estimate, the gauge, the tapau lever, and full transparency. */
 function WastePrediction({ prediction, partySize, tapau, setTapau, whyOpen, setWhyOpen, onRightSize }) {
   const {
@@ -616,8 +741,8 @@ function Row({ k, v }) {
 
 /* Step 3 — the green receipt: real bill anatomy + the sustainability story,
  * and the moment the visit enters shared history. */
-function GreenReceipt({ confirmed, startOver, goToOperator, onCheckout }) {
-  const { prediction, order, visit, savings } = confirmed
+function GreenReceipt({ confirmed, startOver, goToOperator, onCheckout, onCheckin }) {
+  const { prediction, order, visit, savings, heldLines = [] } = confirmed
   const l = LEVELS[prediction.level]
   const service = prediction.totalPrice * SERVICE_CHARGE
   const gst = (prediction.totalPrice + service) * GST
@@ -661,6 +786,29 @@ function GreenReceipt({ confirmed, startOver, goToOperator, onCheckout }) {
             })}
           </div>
 
+          {/* Round 2 on hold — not cooked, not billed (yet) */}
+          {heldLines.length > 0 && (
+            <div className="mt-4 rounded-xl border border-dashed border-stone-300 bg-stone-50 px-4 py-3">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-stone-400">
+                ⏸ On hold — round 2
+              </p>
+              <div className="mt-1.5 space-y-1 text-sm">
+                {heldLines.map((line) => {
+                  const dish = MENU_BY_ID[line.dishId]
+                  return (
+                    <div key={line.key} className="flex items-baseline justify-between gap-3 text-stone-500">
+                      <span>{dish.emoji} {dish.name}</span>
+                      <span className="text-xs">not billed unless served</span>
+                    </div>
+                  )
+                })}
+              </div>
+              <p className="mt-2 text-[11px] leading-relaxed text-stone-400">
+                We'll check in near the end of the meal — still hungry? Round 2 fires in one tap.
+              </p>
+            </div>
+          )}
+
           {/* Bill anatomy */}
           <div className="receipt-rule mt-4 space-y-1.5 pt-3 text-sm text-stone-500">
             <div className="flex justify-between"><span>Subtotal</span><span className="tabular-nums">{fmtSGD(prediction.totalPrice)}</span></div>
@@ -703,12 +851,21 @@ function GreenReceipt({ confirmed, startOver, goToOperator, onCheckout }) {
           </p>
 
           <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-center">
-            <button
-              onClick={onCheckout}
-              className="rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-card transition-colors hover:bg-brand-700"
-            >
-              📸 Table check-out (after the meal) →
-            </button>
+            {heldLines.length > 0 ? (
+              <button
+                onClick={onCheckin}
+                className="rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-card transition-colors hover:bg-brand-700"
+              >
+                🍽 Mid-meal check-in — still hungry? →
+              </button>
+            ) : (
+              <button
+                onClick={onCheckout}
+                className="rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-card transition-colors hover:bg-brand-700"
+              >
+                📸 Table check-out (after the meal) →
+              </button>
+            )}
             <button
               onClick={goToOperator}
               className="rounded-xl border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-stone-600 transition-colors hover:border-brand-300 hover:text-brand-700"
@@ -733,6 +890,208 @@ function ReceiptStat({ v, k }) {
     <div>
       <p className="font-display text-lg font-semibold text-brand-800">{v}</p>
       <p className="text-[11px] text-brand-700/70">{k}</p>
+    </div>
+  )
+}
+
+/*
+ * MID-MEAL CHECK-IN — the smart-reorder moment. Near the end of the meal the
+ * system asks the question the table couldn't answer at order time: "Still
+ * hungry?" Each held dish is fired (cooked fresh, added to the bill and the
+ * prediction) or skipped (never cooked, never billed — waste avoided before
+ * it exists). The visit in shared history is updated to the final order, so
+ * the operator feed and the model both see what was actually served.
+ */
+function MidMealCheckin({ confirmed, stats, tapau, updateVisit, onContinue, goToOperator, startOver }) {
+  const { visit, order, heldLines, prediction } = confirmed
+  const [choices, setChoices] = useState({}) // line key -> 'fire' | 'skip'
+  const [resolved, setResolved] = useState(null)
+
+  const decide = (key, choice) => {
+    if (!resolved) setChoices((c) => ({ ...c, [key]: choice }))
+  }
+  const skipAll = () => {
+    if (!resolved) setChoices(Object.fromEntries(heldLines.map((l) => [l.key, 'skip'])))
+  }
+  const allDecided = heldLines.every((l) => choices[l.key])
+  const coveragePct = Math.round((prediction.coverage || 0) * 100)
+
+  const confirmChoices = () => {
+    const fired = heldLines.filter((l) => choices[l.key] === 'fire')
+    const skipped = heldLines.filter((l) => choices[l.key] === 'skip')
+    const finalOrder = [...order, ...fired]
+    const finalPrediction = predictWaste(stats, visit.partySize, finalOrder, { tapau })
+    const lineWeight = (l) => MENU_BY_ID[l.dishId].portionWeightG * PORTIONS[l.portion].weightFactor
+    const linePrice = (l) => MENU_BY_ID[l.dishId].price * PORTIONS[l.portion].priceFactor
+    const skippedG = Math.round(skipped.reduce((s, l) => s + lineWeight(l), 0))
+    const skippedSGD = skipped.reduce((s, l) => s + linePrice(l), 0)
+
+    // The visit in shared history becomes the final order — what the kitchen
+    // actually cooked is what the model and the operator feed learn from.
+    updateVisit(visit.id, {
+      dishIds: finalOrder.map((l) => l.dishId),
+      dishCount: Math.round(finalPrediction.effectiveDishes * 10) / 10,
+      totalFoodWeightG: Math.round(finalPrediction.totalWeightG),
+      wastedWeightG: finalPrediction.predictedWasteG,
+    })
+    setResolved({ fired, skipped, skippedG, skippedSGD, finalOrder, finalPrediction })
+  }
+
+  const continueToCheckout = () =>
+    onContinue({
+      ...confirmed,
+      order: resolved.finalOrder,
+      prediction: resolved.finalPrediction,
+      heldLines: [],
+      visit: { ...visit, wastedWeightG: resolved.finalPrediction.predictedWasteG },
+      roundTwo: {
+        firedCount: resolved.fired.length,
+        skippedCount: resolved.skipped.length,
+        skippedG: resolved.skippedG,
+        skippedSGD: resolved.skippedSGD,
+      },
+    })
+
+  return (
+    <div className="mx-auto max-w-xl animate-rise">
+      <Card className="p-7">
+        <SectionLabel>Near the end of the meal</SectionLabel>
+        <h2 className="font-display mt-1 text-2xl font-semibold tracking-tight">
+          Still hungry? · Table {RESTAURANT.table}
+        </h2>
+        <p className="mt-1.5 text-sm text-stone-500">
+          Round 1 put <strong className="text-stone-700">{fmtG(prediction.totalWeightG)}</strong> on
+          the table — about <strong className="text-stone-700">{coveragePct}%</strong> of what a
+          table of {visit.partySize} typically eats. {heldLines.length}{' '}
+          {heldLines.length === 1 ? 'dish is' : 'dishes are'} still on hold: add another plate only
+          if you're genuinely still hungry, instead of having ordered too much up front.
+        </p>
+
+        <div className="mt-5 space-y-3">
+          {heldLines.map((line) => {
+            const dish = MENU_BY_ID[line.dishId]
+            const portion = PORTIONS[line.portion]
+            const choice = choices[line.key]
+            return (
+              <div key={line.key} className="rounded-xl border border-stone-200 bg-white p-3.5">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={dishPhoto(line.dishId)}
+                    alt={dish.name}
+                    className="h-14 w-14 rounded-lg object-cover"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold">
+                      {dish.emoji} {dish.name}
+                      {line.portion !== 'regular' && (
+                        <span className="ml-1.5 text-xs font-semibold text-stone-400">
+                          {portion.label}
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-xs text-stone-500">
+                      ~{fmtG(dish.portionWeightG * portion.weightFactor)} ·{' '}
+                      {fmtSGD(dish.price * portion.priceFactor)} · ready in minutes
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-2.5 grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => decide(line.key, 'fire')}
+                    disabled={!!resolved}
+                    aria-pressed={choice === 'fire'}
+                    className={`rounded-lg border px-3 py-2 text-xs font-bold transition-all ${
+                      choice === 'fire'
+                        ? 'border-amber-400 bg-amber-50 text-amber-900 ring-2 ring-amber-300'
+                        : 'border-stone-200 bg-white text-stone-600 hover:border-amber-300'
+                    } ${resolved && choice !== 'fire' ? 'opacity-40' : ''}`}
+                  >
+                    🔥 Still hungry — fire it
+                  </button>
+                  <button
+                    onClick={() => decide(line.key, 'skip')}
+                    disabled={!!resolved}
+                    aria-pressed={choice === 'skip'}
+                    className={`rounded-lg border px-3 py-2 text-xs font-bold transition-all ${
+                      choice === 'skip'
+                        ? 'border-brand-400 bg-brand-50 text-brand-900 ring-2 ring-brand-300'
+                        : 'border-stone-200 bg-white text-stone-600 hover:border-brand-300'
+                    } ${resolved && choice !== 'skip' ? 'opacity-40' : ''}`}
+                  >
+                    ✓ We're good — skip it
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {!resolved ? (
+          <>
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <button
+                onClick={skipAll}
+                className="text-xs font-semibold text-brand-700 underline decoration-brand-300 underline-offset-4 hover:text-brand-800"
+              >
+                We're all full — skip everything
+              </button>
+              <button
+                onClick={confirmChoices}
+                disabled={!allDecided}
+                className="rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-card transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-400 disabled:shadow-none"
+              >
+                Confirm round 2 →
+              </button>
+            </div>
+            <p className="mt-3 text-[11px] leading-relaxed text-stone-400">
+              Skipped dishes are never cooked and never billed — that's food waste avoided in the
+              kitchen, before it can reach a plate or a bin.
+            </p>
+          </>
+        ) : (
+          <div className="animate-pop mt-5 rounded-2xl border border-stone-200 bg-stone-50/70 p-5">
+            {resolved.skipped.length > 0 && (
+              <p className="text-sm text-stone-600">
+                🌱 <strong>{resolved.skipped.length}</strong>{' '}
+                {resolved.skipped.length === 1 ? 'plate' : 'plates'} never cooked —{' '}
+                <strong>{fmtG(resolved.skippedG)}</strong> of food stays out of the bin and{' '}
+                <strong>{fmtSGD(resolved.skippedSGD)}</strong> stays off your bill.
+              </p>
+            )}
+            {resolved.fired.length > 0 && (
+              <p className={`text-sm text-stone-600 ${resolved.skipped.length > 0 ? 'mt-2' : ''}`}>
+                🔥 <strong>{resolved.fired.length}</strong>{' '}
+                {resolved.fired.length === 1 ? 'dish' : 'dishes'} fired — arriving hot in a few
+                minutes. Updated leftover estimate:{' '}
+                <strong>{fmtG(resolved.finalPrediction.predictedWasteG)}</strong>.
+              </p>
+            )}
+            <p className="mt-3 text-xs text-stone-400">
+              ✓ The visit history now reflects what the kitchen actually cooked.
+            </p>
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+              <button
+                onClick={continueToCheckout}
+                className="rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-card transition-colors hover:bg-brand-700"
+              >
+                📸 Table check-out →
+              </button>
+              <button
+                onClick={goToOperator}
+                className="rounded-xl border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-stone-600 transition-colors hover:border-brand-300 hover:text-brand-700"
+              >
+                Skip to dashboard
+              </button>
+              <button
+                onClick={startOver}
+                className="rounded-xl border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-stone-600 transition-colors hover:border-brand-300 hover:text-brand-700"
+              >
+                New table
+              </button>
+            </div>
+          </div>
+        )}
+      </Card>
     </div>
   )
 }

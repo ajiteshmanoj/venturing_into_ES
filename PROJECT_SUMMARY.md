@@ -76,7 +76,14 @@ Framed as the ordering flow of a fictional restaurant — **"Golden Wok Zi Char
    - **✨ Right-size it for me** — one tap that halves the largest portions
      until the prediction turns green;
    - **🥡 Tapau toggle** — packed leftovers credited as meals (65% recovery),
-     not waste.
+     not waste;
+   - **🍽 Smart serve (incremental ordering)** — when the order exceeds the
+     table's appetite, the engine proposes a staged split: fire a round 1
+     that still feeds everyone, hold the excess (highest bin-contribution
+     dishes). Near the end of the meal a **"Still hungry?"** check-in fires
+     or skips each held dish — skipped dishes are never cooked and never
+     billed, so the waste is avoided in the kitchen, before it can reach a
+     plate. The visit history is updated to what was actually served.
 7. **Green receipt** — real bill anatomy (subtotal, 10% service charge, 9%
    GST), waste footprint, and a savings strip: grams avoided, S$ off the
    bill, eco-points.
@@ -133,6 +140,10 @@ All logic lives in `src/engine/recommend.js`, commented for judge questions:
 4. **Tapau credit** — 65% of predicted leftovers recovered as meals.
 5. **Recommendation** — smallest dish count that feeds the party (servings
    constraint) while sitting in the historically lowest-waste bucket.
+5b. **Smart-serve split** — when the whole-order prediction isn't green,
+   deterministically move the dishes with the largest expected bin
+   contribution (grams × waste propensity) to a held round 2, stopping once
+   round 1 turns green; round 1 must always still feed the party on its own.
 6. **Check-out points** — participation credit + (predicted − measured)/10 g,
    split evenly across the party; no penalty for missing (punishment would
    kill check-out participation, and the check-out data is what the operator
@@ -218,6 +229,12 @@ public/dishes/               # photography + CREDITS.md
    with the measured number; every stat updates.
 8. Walk the business case: ROI, dish leaderboard, CO₂e/NEA, peer benchmark.
 9. **↺ Reset** for the next run.
+
+Alternative arc (incremental ordering): at step 3, toggle **🍽 Smart serve**
+instead — 3 dishes fire now, 2 go on hold (estimate flips green, bill drops to
+round 1 only). After sending, tap **Mid-meal check-in — still hungry?** and
+skip the held dishes: "2 plates never cooked — 780 g out of the bin, S$25 off
+the bill." Then check out as usual.
 
 ## 10. Roadmap (mention, don't build)
 
