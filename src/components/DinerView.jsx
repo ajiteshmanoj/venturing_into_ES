@@ -1418,7 +1418,7 @@ function RewardsCard({ earned, members }) {
         <p className="font-display text-[46px] font-semibold leading-none tracking-tight">
           {balance}
         </p>
-        <span aria-hidden className="text-[26px] leading-none text-amber-300">★</span>
+        <span aria-hidden className="text-[26px] leading-none">🍚</span>
         <span className="ml-auto rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 font-data text-[11px] font-bold text-amber-200">
           +{earned} today
         </span>
@@ -1503,7 +1503,7 @@ function RewardsCard({ earned, members }) {
                   Redeem
                 </span>
               ) : (
-                <span className="whitespace-nowrap font-data text-[11px] text-white/40">{t.at} ★</span>
+                <span className="whitespace-nowrap font-data text-[11px] text-white/40">{t.at} 🍚</span>
               )}
             </button>
           )
