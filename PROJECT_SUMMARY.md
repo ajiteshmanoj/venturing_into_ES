@@ -64,9 +64,11 @@ Framed as the ordering flow of a fictional restaurant — **"Golden Wok Zi Char
    - under-ordering ("may be on the light side — you'll likely finish everything").
 4. **Appetite-aware waste prediction** — animated gauge + traffic light
    (Low / Medium / High). Waste scales with the **whole order vs. the table's
-   appetite** (~420 g/person): orders within appetite predict scraps only
-   (~3%); historical waste behaviour ramps in only as the order exceeds what
-   the table can eat.
+   appetite** (~420 g/person): orders within appetite predict only the
+   floor — scraps (~3%) plus a mix-scaled residual for often-left-over
+   dishes, so a fried-rice order shows ~10% while har cheong gai shows ~3%
+   (the "△ Often left over" chip and the gauge always agree); historical
+   waste behaviour ramps in only as the order exceeds what the table can eat.
 5. **"Why this estimate?"** — always-available transparency panel showing
    every input: party size, dishes-per-person, appetite coverage, historical
    match (N similar past visits), dish-mix adjustment. No black box.
@@ -136,7 +138,8 @@ All logic lives in `src/engine/recommend.js`, commented for judge questions:
    (bulk carbs/soup ≈ 1.2–1.3×, premium protein ≈ 0.7–0.9×).
 3. **Appetite scaling** — behavioural waste applies only to food beyond the
    table's appetite (~420 g/person); ramps in between 75% and 105% of
-   appetite; below that, scraps only (~3%).
+   appetite; below that, the mix-aware floor applies: scraps (~3%) plus
+   ~0.3 × (mix − 1) residual for often-left-over dishes (max ~12%).
 4. **Tapau credit** — 65% of predicted leftovers recovered as meals.
 5. **Recommendation** — smallest dish count that feeds the party (servings
    constraint) while sitting in the historically lowest-waste bucket.

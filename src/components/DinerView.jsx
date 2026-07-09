@@ -631,7 +631,7 @@ function SmartServeCard({ split, smartServe, setSmartServe }) {
 /* The estimate, the gauge, the tapau lever, and full transparency. */
 function WastePrediction({ prediction, partySize, tapau, setTapau, whyOpen, setWhyOpen, onRightSize }) {
   const {
-    predictedWasteG, plateLeftoverG, tapauSavedG, rate, baseRate, mix,
+    predictedWasteG, plateLeftoverG, tapauSavedG, rate, baseRate, floorRate, mix,
     level, ratio, effectiveDishes, n, totalWeightG, coverage, capacityG, ramp,
   } = prediction
   const l = LEVELS[level]
@@ -716,13 +716,24 @@ function WastePrediction({ prediction, partySize, tapau, setTapau, whyOpen, setW
               )}
             </>
           ) : (
-            <Row k="Within appetite" v="table finishes it — only scraps (~3%) expected" />
+            <>
+              <Row k="Within appetite" v="your table can finish this order" />
+              <Row
+                k="Expected floor"
+                v={
+                  mix > 1.02
+                    ? `~${Math.round(floorRate * 100)}% — scraps (~3%) + residual from often-left-over dishes`
+                    : '~3% — unavoidable scraps (bones, shells, sauce)'
+                }
+              />
+            </>
           )}
           {tapau && <Row k="Tapau credit" v={`−${Math.round(prediction.plateLeftoverG ? (tapauSavedG / plateLeftoverG) * 100 : 0)}% of leftovers packed home`} />}
           <p className="pt-1.5 text-xs leading-relaxed text-stone-400">
-            Simple rules, no black box: waste behaviour only applies to food beyond what your table
-            can eat (~420 g per person). Past that, we look up how much similar tables left behind
-            and adjust for your dish mix.
+            Simple rules, no black box: over-ordering waste only applies to food beyond what your
+            table can eat (~420 g per person) — past that, we look up how much similar tables left
+            behind and adjust for your dish mix. Dishes that often come back unfinished (rice,
+            noodles, soup) carry a small residual even within appetite.
           </p>
         </dl>
       )}

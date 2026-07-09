@@ -99,6 +99,22 @@ export const TAPAU_RECOVERY = 0.65
 export const APPETITE_G_PER_PERSON = 420
 export const SCRAP_RATE = 0.03
 
+/*
+ * Even a right-sized table doesn't finish every dish equally: bulk carbs and
+ * soups leave a residual (the last scoops of rice, the soup base) while
+ * premium proteins get picked clean. So the within-appetite floor is not a
+ * flat scrap rate — it scales with the dish mix. This keeps the "△ Often
+ * left over" chip and the gauge consistent: a fried-rice-only order shows
+ * ~10% even when the table can finish it, while har cheong gai stays at ~3%.
+ * Slope calibration: propensity 1.25 (fried rice) → ~10% floor ≈ a few
+ * spoonfuls left of a 380 g plate; capped by the mix values themselves
+ * (max menu propensity 1.3 → ~12%), still inside the "low waste" band.
+ */
+export const RESIDUAL_LEFTOVER_SLOPE = 0.3
+export function scrapFloorRate(mix) {
+  return SCRAP_RATE + RESIDUAL_LEFTOVER_SLOPE * Math.max(0, mix - 1)
+}
+
 export function appetiteCoverage(totalWeightG, partySize) {
   const capacityG = partySize * APPETITE_G_PER_PERSON
   return { capacityG, coverage: capacityG ? totalWeightG / capacityG : 0 }
@@ -223,12 +239,15 @@ function generateVisits() {
     const totalWeight = dishWeights.reduce((s, d) => s + d.weightG, 0)
 
     // Behavioural waste only applies to food beyond the table's appetite —
-    // under-ordered tables finish everything bar scraps (see APPETITE MODEL).
+    // under-ordered tables finish everything bar scraps plus the mix-scaled
+    // residual from often-left-over dishes (see APPETITE MODEL).
     const realizedRatio = dishCount / partySize
-    const behaviourRate = baseWasteRate(realizedRatio) * mixFactor(dishWeights)
+    const mix = mixFactor(dishWeights)
+    const behaviourRate = baseWasteRate(realizedRatio) * mix
+    const floorRate = scrapFloorRate(mix)
     const ramp = coverageRamp(totalWeight, partySize)
     const wasteRate = clamp(
-      SCRAP_RATE + (behaviourRate - SCRAP_RATE) * ramp + gauss() * 0.045 * Math.max(ramp, 0.3),
+      floorRate + Math.max(0, behaviourRate - floorRate) * ramp + gauss() * 0.045 * Math.max(ramp, 0.3),
       0.01,
       0.55,
     )
