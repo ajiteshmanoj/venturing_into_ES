@@ -281,8 +281,8 @@ function OrderScreen(props) {
     <>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <SectionLabel>Step 2 of 3 — Build your order</SectionLabel>
-          <h2 className="font-display mt-1 text-3xl font-semibold tracking-tight">
+          <SectionLabel accent>Step 2 of 3 · Build your order</SectionLabel>
+          <h2 className="font-display mt-2 text-3xl font-semibold tracking-tight">
             Table of {partySize}
             <button
               onClick={() => setPartySize(null)}
@@ -356,7 +356,7 @@ function OrderScreen(props) {
                           )}
                         </span>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium tabular-nums text-stone-600">
+                          <span className="font-data text-[13px] font-medium text-stone-600">
                             {fmtSGD(dish.price * portion.priceFactor)}
                           </span>
                           <button
@@ -440,15 +440,15 @@ function OrderScreen(props) {
             <div className="mt-5 space-y-1 border-t border-stone-100 pt-4">
               <div className="flex items-baseline justify-between">
                 <span className="text-sm font-medium text-stone-500">Subtotal</span>
-                <span className="font-display text-2xl font-semibold tabular-nums tracking-tight">
+                <span className="font-display text-[26px] font-semibold tabular-nums tracking-tight">
                   {fmtSGD(prediction.totalPrice)}
                 </span>
               </div>
-              <p className="text-right text-[11px] text-stone-400">
+              <p className="text-right font-data text-[10.5px] text-stone-400">
                 + 10% svc &amp; 9% GST at checkout
               </p>
               {heldLines.length > 0 && (
-                <p className="text-right text-[11px] font-medium text-brand-700">
+                <p className="text-right font-data text-[10.5px] font-medium text-brand-700">
                   + {fmtSGD(heldPrice)} on hold — billed only if round 2 is served
                 </p>
               )}
@@ -457,11 +457,12 @@ function OrderScreen(props) {
             <button
               onClick={confirmOrder}
               disabled={order.length === 0}
-              className="mt-4 w-full rounded-xl bg-brand-600 py-3.5 text-base font-bold text-white shadow-card transition-all hover:bg-brand-700 hover:shadow-lift active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-400 disabled:shadow-none"
+              className="btn-primary mt-4 w-full rounded-full bg-brand-600 py-3.5 text-base font-bold text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-400"
             >
               {heldLines.length > 0
-                ? `Send round 1 (${order.length - heldLines.length} dishes) to kitchen →`
-                : 'Send order to kitchen →'}
+                ? `Send round 1 (${order.length - heldLines.length} dishes) to kitchen`
+                : 'Send order to kitchen'}{' '}
+              <span className="btn-arrow" aria-hidden>→</span>
             </button>
           </Card>
         </div>
@@ -469,7 +470,7 @@ function OrderScreen(props) {
 
       {/* Mobile sticky bar — jump to the order rail */}
       {order.length > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-stone-200 bg-white/95 px-5 py-3 shadow-lift backdrop-blur lg:hidden">
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-stone-900/8 bg-card/95 px-5 py-3 shadow-float backdrop-blur lg:hidden">
           <button
             onClick={() => document.getElementById('order-rail')?.scrollIntoView({ behavior: 'smooth' })}
             className="flex w-full items-center justify-between"
@@ -494,7 +495,11 @@ function OrderScreen(props) {
 function DishCard({ dish, count, onAdd, onRemove }) {
   const chip = finishChip(dish)
   return (
-    <Card className={`group/dish overflow-hidden transition-shadow hover:shadow-lift ${count ? 'ring-2 ring-brand-400' : ''}`}>
+    <div
+      className={`group/dish overflow-hidden rounded-[18px] border bg-card transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lift ${
+        count ? 'border-brand-400/70 shadow-lift' : 'border-stone-900/6 shadow-card'
+      }`}
+    >
       <div className="relative aspect-[10/6.5] overflow-hidden bg-stone-100">
         <img
           src={dishPhoto(dish.id)}
@@ -502,17 +507,18 @@ function DishCard({ dish, count, onAdd, onRemove }) {
           loading="lazy"
           className="dish-photo h-full w-full object-cover"
         />
+        <div aria-hidden className="pointer-events-none absolute inset-0 rounded-t-[17px] ring-1 ring-inset ring-stone-900/10" />
         {chip && (
           <span
-            className={`absolute left-2.5 top-2.5 rounded-full px-2.5 py-1 text-[11px] font-bold shadow-card ${
-              chip.tone === 'good' ? 'bg-white/95 text-status-good' : 'bg-white/95 text-status-warn'
+            className={`absolute left-2.5 top-2.5 rounded-full px-2.5 py-1 text-[11px] font-bold shadow-card backdrop-blur ${
+              chip.tone === 'good' ? 'bg-white/92 text-status-good' : 'bg-white/92 text-status-warn'
             }`}
           >
             {chip.tone === 'good' ? '✓' : '△'} {chip.label}
           </span>
         )}
         {count > 0 && (
-          <span className="absolute right-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-brand-600 text-sm font-bold text-white shadow-card">
+          <span className="animate-pop absolute right-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-brand-600 font-data text-sm font-bold text-white shadow-card">
             {count}
           </span>
         )}
@@ -526,18 +532,18 @@ function DishCard({ dish, count, onAdd, onRemove }) {
               <span className="capitalize">· {dish.category} · feeds ~{dish.typicalServings}</span>
             </p>
           </div>
-          <span className="whitespace-nowrap font-display text-[15px] font-semibold tabular-nums text-stone-700">
+          <span className="whitespace-nowrap font-data text-[13.5px] font-semibold text-stone-700">
             {fmtSGD(dish.price)}
           </span>
         </div>
         <div className="mt-3 flex items-center justify-between">
-          <span className="text-xs text-stone-400">~{dish.portionWeightG} g</span>
+          <span className="font-data text-[11px] text-stone-400">~{dish.portionWeightG} g</span>
           <div className="flex items-center gap-2">
             {count > 0 && (
               <button
                 onClick={onRemove}
                 aria-label={`Remove one ${dish.name}`}
-                className="h-9 w-9 rounded-full border border-stone-200 bg-white text-lg leading-none text-stone-600 transition-colors hover:border-red-300 hover:text-red-600"
+                className="h-9 w-9 rounded-full border border-stone-200 bg-card text-lg leading-none text-stone-600 transition-all hover:border-red-300 hover:text-red-600 active:scale-90"
               >
                 −
               </button>
@@ -545,14 +551,14 @@ function DishCard({ dish, count, onAdd, onRemove }) {
             <button
               onClick={onAdd}
               aria-label={`Add ${dish.name}`}
-              className={`h-9 rounded-full bg-brand-600 text-sm font-bold text-white shadow-card transition-all hover:bg-brand-700 active:scale-95 ${count > 0 ? 'w-9 text-lg leading-none' : 'px-4'}`}
+              className={`h-9 rounded-full bg-brand-600 text-sm font-bold text-white shadow-card transition-all hover:bg-brand-700 hover:shadow-glow active:scale-90 ${count > 0 ? 'w-9 text-lg leading-none' : 'px-4'}`}
             >
               {count > 0 ? '+' : 'Add'}
             </button>
           </div>
         </div>
       </div>
-    </Card>
+    </div>
   )
 }
 
@@ -685,7 +691,7 @@ function WastePrediction({ prediction, partySize, tapau, setTapau, whyOpen, setW
       {(level === 'medium' || level === 'high') && (
         <button
           onClick={onRightSize}
-          className="animate-rise mt-3 w-full rounded-xl border border-brand-200 bg-brand-50 py-2.5 text-sm font-bold text-brand-800 transition-all hover:bg-brand-100 active:scale-[0.99]"
+          className="animate-rise mt-3 w-full rounded-full border border-brand-200 bg-brand-50 py-2.5 text-sm font-bold text-brand-800 transition-all hover:border-brand-300 hover:bg-brand-100 active:scale-[0.98]"
         >
           ✨ Right-size it for me — switch to Half portions
         </button>
