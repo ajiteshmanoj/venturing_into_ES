@@ -58,7 +58,7 @@ The demo arc: **predict → act → verify.**
 | Feature | What it does |
 |---|---|
 | **📸 Table check-out** | Before/after verification of the meal; measured-vs-predicted reveal ("beat the estimate by 68 g") |
-| **Rewards for beating the prediction** | Points on the beat (fair target for every table), split across every party member; government-voucher card (illustrative) |
+| **Tiered rewards (Starbucks-style)** | Personal eco-balance card with a milestone track and redeemable tiers (free drink → hawker voucher → free dish → CDC voucher → feast); points earned by beating the prediction, split across every party member; the demo check-out always unlocks a tier live |
 | **📉 Your waste trend** | The diner's personal leftover history across check-outs, with today's measured result appended and highlighted |
 | **Model re-learning** | The measured result overwrites the prediction in shared history — the model learns from reality |
 
@@ -151,8 +151,15 @@ Framed as the ordering flow of a fictional restaurant — **"Golden Wok Zi Char
      beat the estimate by 68 g");
    - **points for beating the prediction** (not absolute waste — fair target
      for every table), split across every party member's account;
-   - government-programme card modelled on Healthy 365 / CDC vouchers,
-     labelled an illustrative fictional partnership;
+   - **Mottainai Rewards card (Starbucks-style)** — personal greeting, big
+     eco-balance with a gold star, a milestone track with dots, and tier
+     rewards that become redeemable as the balance crosses them (free house
+     drink → S$5 hawker voucher → free zi char dish → S$15 CDC voucher →
+     feast for two); the seeded balance sits one point under a tier so the
+     live check-out always unlocks a reward on stage;
+   - voucher tiers reuse the government-programme framing modelled on
+     Healthy 365 / CDC vouchers, labelled an illustrative fictional
+     partnership;
    - **📉 "Your waste trend"** — the diner's personal history (per-person
      measured leftovers across past check-outs, simulated) with today's
      result appended and highlighted, mirroring the operator's trend chart

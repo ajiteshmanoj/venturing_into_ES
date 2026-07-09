@@ -5,6 +5,7 @@ import {
 } from 'recharts'
 import {
   MENU, MENU_BY_ID, PORTIONS, SERVICE_CHARGE, GST, DINER_PAST_VISITS,
+  DINER_NAME, DINER_POINTS_BALANCE, REWARD_TIERS,
   dishPhoto, finishChip,
 } from '../data/seedData.js'
 import {
@@ -1126,7 +1127,7 @@ function MidMealCheckin({ confirmed, stats, tapau, updateVisit, onContinue, goTo
  * every demo run is deterministic. Beating the prediction earns points,
  * split across every account at the table.
  */
-const PARTY_NAMES = ['You', 'Wei Ming', 'Priya', 'Sarah', 'Jun Jie', 'Alex', 'Mei Lin', 'Raj']
+const PARTY_NAMES = [DINER_NAME, 'Wei Ming', 'Priya', 'Sarah', 'Jun Jie', 'Alex', 'Mei Lin', 'Raj']
 
 function TableCheckout({ confirmed, updateVisit, startOver, goToOperator }) {
   const { prediction, order, visit } = confirmed
@@ -1232,33 +1233,8 @@ function TableCheckout({ confirmed, updateVisit, startOver, goToOperator }) {
               </p>
             )}
 
-            {/* Points split across the party's accounts */}
-            <div className="mt-4 rounded-xl bg-white p-4 shadow-card">
-              <div className="flex items-baseline justify-between">
-                <p className="text-sm font-bold text-stone-800">Mottainai Rewards</p>
-                <p className="font-display text-lg font-semibold text-brand-700">
-                  +{points.total} pts
-                </p>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {members.map((name) => (
-                  <span
-                    key={name}
-                    className="flex items-center gap-1.5 rounded-full bg-brand-50 py-1 pl-1.5 pr-3 text-xs font-semibold text-brand-800"
-                  >
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-600 text-[10px] font-bold text-white" aria-hidden>
-                      {name.slice(0, 1)}
-                    </span>
-                    {name} +{points.perPerson}
-                  </span>
-                ))}
-              </div>
-              <p className="mt-3 rounded-lg bg-stone-50 px-3 py-2 text-[11px] leading-relaxed text-stone-500">
-                🏛 Illustrative national programme — modelled on Healthy 365 / the National Steps
-                Challenge: points redeemable as CDC or hawker vouchers. Fictional partnership,
-                shown for demo purposes.
-              </p>
-            </div>
+            {/* Mottainai Rewards — Starbucks-style balance + milestone tiers */}
+            <RewardsCard earned={points.perPerson} members={members} />
 
             {!logged ? (
               <button
@@ -1394,6 +1370,170 @@ function TrendTip({ active, payload, label }) {
         <span className="inline-block h-2 w-2 rounded-full" style={{ background: TREND_TEAL }} aria-hidden />
         Leftovers per person: <strong>{payload[0].value} g</strong>
       </p>
+    </div>
+  )
+}
+
+/*
+ * MOTTAINAI REWARDS — the loyalty moment, styled after the Starbucks
+ * Rewards home card: personal greeting, big star balance, a milestone track
+ * with dots, and tier rewards you redeem (drink → voucher → dish → feast).
+ * The seeded balance sits one point under a tier, so today's check-out
+ * always pushes the diner across a milestone live on stage.
+ */
+function RewardsCard({ earned, members }) {
+  const [redeemed, setRedeemed] = useState({})
+  const balance = DINER_POINTS_BALANCE + earned
+  const tiers = REWARD_TIERS
+  const n = tiers.length
+
+  // Progress along the evenly-spaced milestone track (Starbucks-style):
+  // dots sit at equal intervals; the fill interpolates between them.
+  let reachedIdx = -1
+  for (let i = 0; i < n; i++) if (balance >= tiers[i].at) reachedIdx = i
+  const frac =
+    reachedIdx === n - 1
+      ? 0
+      : reachedIdx === -1
+        ? Math.max(0, balance / tiers[0].at - 1)
+        : (balance - tiers[reachedIdx].at) / (tiers[reachedIdx + 1].at - tiers[reachedIdx].at)
+  const progressPct = Math.max(0, Math.min(1, (reachedIdx + frac) / (n - 1))) * 100
+  const nextTier = tiers.find((t) => balance < t.at)
+
+  const hour = new Date().getHours()
+  const [greeting, sky] =
+    hour < 12 ? ['Good morning', '☀️'] : hour < 18 ? ['Good afternoon', '☀️'] : ['Good evening', '🌙']
+
+  return (
+    <div className="mt-4 overflow-hidden rounded-[22px] border border-brand-800/60 bg-gradient-to-br from-brand-900 via-[#0c3f3a] to-stone-900 p-5 text-white shadow-lift">
+      <p className="font-display text-[22px] font-semibold tracking-tight">
+        {greeting}, {DINER_NAME} <span aria-hidden>{sky}</span>
+      </p>
+
+      {/* Balance row */}
+      <div className="mt-4 flex items-center gap-3">
+        <p className="font-data text-[10px] font-semibold uppercase leading-[1.35] tracking-[0.2em] text-white/55">
+          Eco<br />Balance
+        </p>
+        <p className="font-display text-[46px] font-semibold leading-none tracking-tight">
+          {balance}
+        </p>
+        <span aria-hidden className="text-[26px] leading-none text-amber-300">★</span>
+        <span className="ml-auto rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 font-data text-[11px] font-bold text-amber-200">
+          +{earned} today
+        </span>
+      </div>
+
+      {/* Milestone track */}
+      <div className="relative mx-1.5 mt-7 h-9">
+        <div className="absolute left-0 right-0 top-[7px] h-[3px] rounded-full bg-white/15" />
+        <div
+          className="meter-fill absolute left-0 top-[7px] h-[3px] rounded-full bg-gradient-to-r from-amber-200/70 to-amber-300"
+          style={{ width: `${progressPct}%` }}
+        />
+        {/* the "you are here" marker */}
+        <span
+          className="absolute top-[8.5px] z-10 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-card"
+          style={{ left: `${progressPct}%` }}
+          aria-hidden
+        />
+        {tiers.map((t, i) => {
+          const reached = balance >= t.at
+          return (
+            <div
+              key={t.at}
+              className="absolute top-0 -translate-x-1/2 text-center"
+              style={{ left: `${(i / (n - 1)) * 100}%` }}
+            >
+              <span
+                className={`mx-auto block h-[17px] w-[17px] rounded-full border-2 transition-colors ${
+                  reached ? 'border-amber-200 bg-amber-300' : 'border-white/20 bg-white/20'
+                }`}
+                aria-hidden
+              />
+              <span className={`mt-1.5 block font-data text-[10px] ${reached ? 'text-amber-200' : 'text-white/45'}`}>
+                {t.at}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+      {nextTier && (
+        <p className="mt-3 text-xs text-white/60">
+          <strong className="font-semibold text-white/90">{nextTier.at - balance} pts</strong> to your
+          next reward — {nextTier.label.toLowerCase()}.
+        </p>
+      )}
+
+      {/* Tier rewards — redeemable once reached */}
+      <div className="mt-4 space-y-1.5" role="list" aria-label="Reward tiers">
+        {tiers.map((t) => {
+          const reached = balance >= t.at
+          const unlockedToday = reached && t.at > DINER_POINTS_BALANCE
+          const isRedeemed = !!redeemed[t.at]
+          return (
+            <button
+              key={t.at}
+              role="listitem"
+              disabled={!reached}
+              onClick={() => setRedeemed((r) => ({ ...r, [t.at]: !r[t.at] }))}
+              className={`flex w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-all ${
+                unlockedToday && !isRedeemed
+                  ? 'animate-pop border-amber-300/50 bg-amber-300/12'
+                  : reached
+                    ? 'border-white/10 bg-white/6 hover:bg-white/10'
+                    : 'border-white/6 bg-transparent opacity-55'
+              } ${reached ? 'cursor-pointer' : 'cursor-default'}`}
+            >
+              <span className="text-lg" aria-hidden>{t.emoji}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[13px] font-bold leading-snug">{t.label}</span>
+                <span className="block text-[11px] text-white/50">{t.detail}</span>
+              </span>
+              {isRedeemed ? (
+                <span className="whitespace-nowrap rounded-full bg-white/90 px-2.5 py-1 text-[10.5px] font-bold text-brand-900">
+                  ✓ Show at counter
+                </span>
+              ) : unlockedToday ? (
+                <span className="whitespace-nowrap rounded-full bg-amber-300 px-2.5 py-1 text-[10.5px] font-bold text-stone-900">
+                  ✨ Unlocked — redeem
+                </span>
+              ) : reached ? (
+                <span className="whitespace-nowrap rounded-full border border-white/25 px-2.5 py-1 text-[10.5px] font-semibold text-white/80">
+                  Redeem
+                </span>
+              ) : (
+                <span className="whitespace-nowrap font-data text-[11px] text-white/40">{t.at} ★</span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Everyone at the table earns — the split, on the dark card */}
+      <div className="mt-5 border-t border-white/10 pt-4">
+        <div className="flex flex-wrap gap-2">
+          {members.map((name) => (
+            <span
+              key={name}
+              className="flex items-center gap-1.5 rounded-full bg-white/10 py-1 pl-1.5 pr-3 text-xs font-semibold text-white/90"
+            >
+              <span
+                className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-500 text-[10px] font-bold text-white"
+                aria-hidden
+              >
+                {name.slice(0, 1)}
+              </span>
+              {name} +{earned}
+            </span>
+          ))}
+        </div>
+        <p className="mt-3 text-[10.5px] leading-relaxed text-white/40">
+          🏛 Illustrative national programme — modelled on Healthy 365 / the National Steps
+          Challenge: points redeemable as CDC or hawker vouchers. Fictional partnership, shown for
+          demo purposes.
+        </p>
+      </div>
     </div>
   )
 }

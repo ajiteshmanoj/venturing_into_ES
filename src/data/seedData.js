@@ -327,6 +327,25 @@ export function computeWasteStats(visits) {
 // the diner learns to right-size (one organic-looking bump in May), sized
 // to the same envelope as the pilot improvement (~30–66% reductions).
 // ---------------------------------------------------------------------------
+/*
+ * MOTTAINAI REWARDS — the demo diner's account.
+ * Balance is eco-points (1 pt ≈ 10 g of waste avoided, same scale as the
+ * receipt). The tier track is modelled on Starbucks-style milestone rewards;
+ * voucher tiers reuse the illustrative national-programme framing (fictional
+ * partnership, labelled as such in the UI).
+ * The starting balance sits ONE point under the 60-pt tier so the live
+ * check-out always unlocks a reward on stage (every outcome earns ≥1 pt).
+ */
+export const DINER_NAME = 'Ajitesh'
+export const DINER_POINTS_BALANCE = 59
+export const REWARD_TIERS = [
+  { at: 20,  emoji: '🧋', label: 'Free house drink',     detail: 'Lime juice or barley, on the house' },
+  { at: 60,  emoji: '🎟️', label: 'S$5 hawker voucher',   detail: 'Any Mottainai partner stall' },
+  { at: 120, emoji: '🍜', label: 'Free zi char dish',    detail: 'Up to S$15 at Golden Wok' },
+  { at: 200, emoji: '🎫', label: 'S$15 CDC voucher',     detail: 'Illustrative national programme' },
+  { at: 300, emoji: '🥂', label: 'Feast for two, on us', detail: "Chef's selection at Golden Wok" },
+]
+
 export const DINER_PAST_VISITS = [
   { label: '14 Mar', wastePerPersonG: 128 },
   { label: '2 Apr',  wastePerPersonG: 112 },
