@@ -4,7 +4,7 @@
 
 **Right-size every table. Waste less, spend less.**
 
-- **Live demo:** https://entrepreneurshipmod.vercel.app
+- **Live demo:** https://mottainai-demo.vercel.app
 - **Repository:** https://github.com/ajiteshmanoj/venturing_into_ES
 - **Context:** University entrepreneurship Demo Day prototype
 

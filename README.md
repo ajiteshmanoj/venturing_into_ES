@@ -12,7 +12,7 @@ Char", Table 12) with live waste prediction, and an **Operator** dashboard
 that proves the business case — wired to the same in-memory history, so a
 confirmed order lands on the dashboard live.
 
-**Live demo:** https://entrepreneurshipmod.vercel.app
+**Live demo:** https://mottainai-demo.vercel.app
 
 ## Run it locally
 
